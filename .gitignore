@@ -1,3 +1,5 @@
+tags
+
 *.o
 *.d
 *.s
@@ -5,5 +7,20 @@
 *.elf
 *.bin
 *.map
-tests/obj_*
+*.epp
+*.core
+*.hex
+*.lss
+*.map
 
+#symbols.[ch]
+examples/*/symbols.c
+examples/*/symbols.h
+
+*.arduino
+*.native
+
+#*.avr*
+
+tests/obj_*
+obj_*
