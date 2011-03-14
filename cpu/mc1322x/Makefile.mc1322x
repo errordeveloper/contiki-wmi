@@ -118,4 +118,14 @@ symbols.c:
 %.elf: $(OBJECTDIR)/board.h  %.co $(PROJECT_OBJECTFILES) contiki-$(TARGET).a $(STARTUP) $(OBJECTDIR)/symbols.o
 	$(CC) $(LDFLAGS) $(CFLAGS) -nostartfiles -o $@ $(filter-out %.a,$^) $(filter %.a,$^) $(filter %.a,$^)
 
+TOOLS = $(CONTIKIMC1322X)/tools/
+
+%.flash: %_$(TARGET).bin
+	perl $(TOOLS)/mc1322x-load.pl -e -t $(UDEV_UART) \
+		-f $<
+
+%.flash-reset: $_$(TARGET).bin $(TOOLS)/ftditools/bbmc
+	perl $(TOOLS)/mc1322x-load.pl -e -t $(UDEV_UART) \
+		-f %_$(TARGET).bin \
+		-c 'bbmc -l $(TARGET) reset'
 

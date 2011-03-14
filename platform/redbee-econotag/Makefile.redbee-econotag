@@ -17,5 +17,11 @@ ifdef UIP_CONF_IPV6
 CFLAGS += -DWITH_UIP6=1
 endif
 
+UDEV_UART = /dev/serial/by-id/usb-FTDI_Dual_RS232-HS-if01-port0
+UDEV_JTAG = /dev/serial/by-id/usb-FTDI_Dual_RS232-HS-if00-port0
+
+#/dev/serial/by-path/pci-0000:00:1d.7-usb-0:2:1.0-port0
+#/dev/serial/by-path/pci-0000:00:1d.7-usb-0:2:1.1-port0
+
 include $(CONTIKIMC1322X)/Makefile.mc1322x
 
