@@ -54,6 +54,7 @@ int rand(void) {
 extern int  __HEAP_START;
 extern int  __HEAP_END;
 
+#if 0
 caddr_t _sbrk ( int incr )
 {
 	static unsigned char *heap = NULL;
@@ -71,4 +72,5 @@ caddr_t _sbrk ( int incr )
 
 	return (caddr_t) prev_heap;
 }
+#endif
 

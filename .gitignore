@@ -14,9 +14,9 @@ tags
 *.lss
 *.map
 
-#symbols.[ch]
-examples/*/symbols.c
-examples/*/symbols.h
+symbols.[ch]
+#examples/*/symbols.c
+#examples/*/symbols.h
 
 *.arduino
 *.native

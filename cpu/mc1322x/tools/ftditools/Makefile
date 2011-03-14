@@ -2,11 +2,12 @@ INSTALL= /usr/local/bin
 
 ################
 
-LDFLAGS = -lftdi
+LDFLAGS = `libftdi-config --libs`
 
 TARGETS = bbmc
 
-CFLAGS = -Wall -Wextra #-Werror
+CFLAGS = -Wall -Wextra `libftdi-config --cflags`
+DEBUG_CLFLAGS = -Werror
 
 all: $(TARGETS)
 

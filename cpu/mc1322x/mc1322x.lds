@@ -224,6 +224,11 @@ HEAP_SIZE = 4096;
 
 
   . = ALIGN(32 / 8);
+
+  __exidx_start = .;
+  .ARM.exidx   : { *(.ARM.exidx* .gnu.linkonce.armexidx.*) }
+  __exidx_end = .;
+
   __end__ = . ;
   _end = .; PROVIDE (end = .);
   . = DATA_SEGMENT_END (.);

@@ -24,7 +24,7 @@ CONTIKI_SOURCEFILES        += $(CONTIKI_TARGET_SOURCEFILES)
 
 THREADS =
 
-CROSS_COMPILE ?= arm-elf-
+CROSS_COMPILE ?= arm-softfloat-eabi-
 CROSS ?= $(CROSS_COMPILE)
 
 ### Compiler definitions
@@ -45,7 +45,7 @@ LINKERSCRIPT = $(CONTIKI_CPU)/mc1322x.lds
 STARTUP=$(OBJECTDIR)/start.o
 
 ARCH_FLAGS= -mcpu=arm7tdmi-s -mthumb-interwork -march=armv4t -mtune=arm7tdmi-s -DCONFIG_ARM -D__ARM__ #-Wcast-align
-THUMB_FLAGS= -mthumb -mcallee-super-interworking
+THUMB_FLAGS= -mthumb #-mcallee-super-interworking
 ARM_FLAGS= -marm
 
 CFLAGSNO = -I. -I$(CONTIKI)/core -I$(CONTIKI_CPU) -I$(CONTIKI_CPU)/loader \
@@ -56,7 +56,9 @@ CFLAGSNO = -I. -I$(CONTIKI)/core -I$(CONTIKI_CPU) -I$(CONTIKI_CPU)/loader \
 	   -I$(CONTIKI_CPU)/board \
            ${addprefix -I,$(APPDIRS)} \
            -DWITH_ASCII -DMCK=$(MCK) \
-           -Werror $(ARCH_FLAGS) -g 
+           $(ARCH_FLAGS) -g 
+
+DEBUG_CFLAGS = -Werror 
 
 CFLAGS  += $(CFLAGSNO) -Os -DRUN_AS_SYSTEM -DROM_RUN -fno-strict-aliasing  -fno-common -ffixed-r8 -msoft-float -DTEXT_BASE=$(TEXT_BASE) -fno-builtin-printf -fno-builtin-sprintf
 LDFLAGS += -T $(LINKERSCRIPT) -nostartfiles -static -u_start -Wl,-Map=contiki-$(TARGET).map,-export-dynamic
