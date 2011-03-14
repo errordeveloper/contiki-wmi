@@ -10,6 +10,7 @@ tags
 *.epp
 *.core
 *.hex
+*.ihex
 *.lss
 *.map
 
@@ -24,3 +25,10 @@ examples/*/symbols.h
 
 tests/obj_*
 obj_*
+
+*.log
+
+Makefile.target
+doc/html
+patches-*
+tools/tunslip6

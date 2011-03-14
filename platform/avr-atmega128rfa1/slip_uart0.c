@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Swedish Institute of Computer Science
+ * Copyright (c) 2010, University of Colombo School of Computing
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,77 +28,66 @@
  *
  * This file is part of the Contiki operating system.
  *
+ * @(#)$$
  */
 
-/* Watchdog routines for the AVR */
+/**
+ * \file
+ *         Machine dependent AVR SLIP routines for UART0.
+ * \author
+ *         Kasun Hewage <kasun.ch@gmail.com>
+ */
 
-/* Default timeout of 2 seconds is available on most MCUs */
-#ifndef WATCHDOG_CONF_TIMEOUT
-#define WATCHDOG_CONF_TIMEOUT WDTO_2S
-//#define WATCHDOG_CONF_TIMEOUT WDTO_4S
-#endif
- 
- /* While balancing start and stop calls is a good idea, an imbalance will cause
-  * resets that can take a lot of time to track down.
-  * Some low power protocols may do this.
-  * The default is no balance; define WATCHDOG_CONF_BALANCE 1 to override.
-  */
-#ifndef WATCHDOG_CONF_BALANCE
-#define WATCHDOG_CONF_BALANCE 0
-#endif
-
-#include "dev/watchdog.h"
-#include <avr/wdt.h>
-#include <avr/interrupt.h>
-
-#if WATCHDOG_CONF_BALANCE
-static int stopped = 0;
-#endif
+#include <stdio.h>
+#include "contiki.h"
+#include "dev/rs232.h"
+#include "slip.h"
 
 /*---------------------------------------------------------------------------*/
-void
-watchdog_init(void)
+static int
+slip_putchar(char c, FILE *stream)
 {
-	MCUSR&=~(1<<WDRF);
-#if WATCHDOG_CONF_BALANCE
-	stopped = 0;
-#endif
-	watchdog_stop();
+#define SLIP_END 0300
+  static char debug_frame = 0;
+
+  if (!debug_frame) {        /* Start of debug output */
+    slip_arch_writeb(SLIP_END);
+    slip_arch_writeb('\r'); /* Type debug line == '\r' */
+    debug_frame = 1;
+  }
+
+  slip_arch_writeb((unsigned char)c);
+          
+  /*
+   * Line buffered output, a newline marks the end of debug output and
+   * implicitly flushes debug output.         
+   */
+  if (c == '\n') {
+    slip_arch_writeb(SLIP_END);
+    debug_frame = 0;
+  }
+
+  return c;
 }
 /*---------------------------------------------------------------------------*/
-void
-watchdog_start(void)
-{
-#if WATCHDOG_CONF_BALANCE
-	stopped--;
-	if(!stopped)
-#endif
-		wdt_enable(WATCHDOG_CONF_TIMEOUT);
-}
+static FILE slip_stdout = FDEV_SETUP_STREAM(slip_putchar, NULL,
+                                            _FDEV_SETUP_WRITE);
 /*---------------------------------------------------------------------------*/
 void
-watchdog_periodic(void)
+slip_arch_init(unsigned long ubr)
 {
-#if WATCHDOG_CONF_BALANCE
-	if(!stopped)
-#endif
-		wdt_reset();
+  rs232_set_input(RS232_PORT_0, slip_input_byte);
+  stdout = &slip_stdout;
 }
 /*---------------------------------------------------------------------------*/
+/*
+ XXX:
+      Currently, the following function is in cpu/avr/dev/rs232.c file. this
+      should be moved to here from there hence this is a platform specific slip 
+      related function. 
 void
-watchdog_stop(void)
+slip_arch_writeb(unsigned char c)
 {
-#if WATCHDOG_CONF_BALANCE
-	stopped++;
-#endif
-	wdt_disable();
+  rs232_send(RS232_PORT_0, c);
 }
-/*---------------------------------------------------------------------------*/
-void
-watchdog_reboot(void)
-{
-	cli();
-	wdt_enable(WDTO_15MS); //wd on,250ms 
-	while(1); //loop
-}
-/*---------------------------------------------------------------------------*/
+*/
