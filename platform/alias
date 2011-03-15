@@ -1,0 +1,8 @@
+## This file can be sources from the shell
+## to provide shordhand aliases for targets.
+## Well, these are still quite long, but
+## copletition can be used with ease.
+
+## make.[]	make TARGET=[]
+freescale-usb	freescale-mc1322xUSB
+econotag	redbee-econotag

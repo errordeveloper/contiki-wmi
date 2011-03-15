@@ -1,7 +1,5 @@
 /*
- * Copyright (c) 2010, Mariano Alvira <mar@devl.org> and other contributors
- * to the MC1322x project (http://mc1322x.devl.org) and Contiki.
- *
+ * Copyright (c) 2010, Swedish Institute of Computer Science.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,49 +26,20 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * This file is part of the Contiki OS.
+ * -----------------------------------------------------------------
  *
- *
+ * Author  : Adam Dunkels, Joakim Eriksson, Niclas Finne
  */
 
-#include <stdio.h>
-#include "contiki.h"
-#include "mc1322x.h"
-#include <sys/types.h>
+#ifndef __LIGHT_SENSOR_H__
+#define __LIGHT_SENSOR_H__
 
-int raise(void)
-{
-	return 0;
-}
+#include "lib/sensors.h"
 
-void srand(unsigned int seed) {
-	*MACA_RANDOM = seed;
-}
+extern const struct sensors_sensor light_sensor;
 
-int rand(void) {
-	return (int)*MACA_RANDOM;
-}
+#define LIGHT_SENSOR_PHOTOSYNTHETIC 0
+#define LIGHT_SENSOR_TOTAL_SOLAR    1
 
-extern int  __HEAP_START;
-extern int  __HEAP_END;
 
-/* #if 0 */
-caddr_t _sbrk ( int incr )
-{
-	static unsigned char *heap = NULL;
-	unsigned char *prev_heap;
-
-	if (heap == NULL) {
-		heap = (unsigned char *)&__HEAP_START;
-	}
-	prev_heap = heap;
-	/* check removed to show basic approach */
-
-	if((heap + incr) >= (unsigned char *)&__HEAP_END) return((void *)-1);
-
-	heap += incr;
-
-	return (caddr_t) prev_heap;
-}
-/* #endif */
-
+#endif /* __LIGHT-SENSOR_H__ */

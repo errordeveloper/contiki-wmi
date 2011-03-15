@@ -30,47 +30,63 @@
  *
  * This file is part of the Contiki OS.
  *
- *
+ * $Id: button-sensor.c,v 1.1 2010/06/09 14:46:30 maralvira Exp $
  */
 
-#include <stdio.h>
-#include "contiki.h"
-#include "mc1322x.h"
-#include <sys/types.h>
+#include "lib/sensors.h"
+#include "dev/button-sensor.h"
 
-int raise(void)
+#include "mc1322x.h"
+
+#include <signal.h>
+
+const struct sensors_sensor button_sensor;
+
+static struct timer debouncetimer;
+static int status(int type);
+
+void kbi4_isr(void) {
+	if(timer_expired(&debouncetimer)) {
+		timer_set(&debouncetimer, CLOCK_SECOND / 4);
+		sensors_changed(&button_sensor);
+	}
+	clear_kbi_evnt(4);
+}
+
+static int
+value(int type)
 {
+	return GPIO->DATA.GPIO_26 || !timer_expired(&debouncetimer);
+}
+
+static int
+configure(int type, int c)
+{
+	switch (type) {
+	case SENSORS_ACTIVE:
+		if (c) {
+			if(!status(SENSORS_ACTIVE)) {
+				timer_set(&debouncetimer, 0);
+				enable_irq_kbi(4);
+			}
+		} else {
+			disable_irq_kbi(4);
+		}
+		return 1;
+	}
 	return 0;
 }
 
-void srand(unsigned int seed) {
-	*MACA_RANDOM = seed;
-}
-
-int rand(void) {
-	return (int)*MACA_RANDOM;
-}
-
-extern int  __HEAP_START;
-extern int  __HEAP_END;
-
-/* #if 0 */
-caddr_t _sbrk ( int incr )
+static int
+status(int type)
 {
-	static unsigned char *heap = NULL;
-	unsigned char *prev_heap;
-
-	if (heap == NULL) {
-		heap = (unsigned char *)&__HEAP_START;
+	switch (type) {
+	case SENSORS_ACTIVE:
+	case SENSORS_READY:
+		return bit_is_set(*CRM_WU_CNTL, 20); /* check if kbi4 irq is enabled */
 	}
-	prev_heap = heap;
-	/* check removed to show basic approach */
-
-	if((heap + incr) >= (unsigned char *)&__HEAP_END) return((void *)-1);
-
-	heap += incr;
-
-	return (caddr_t) prev_heap;
+	return 0;
 }
-/* #endif */
 
+SENSORS_SENSOR(button_sensor, BUTTON_SENSOR,
+	       value, configure, status);

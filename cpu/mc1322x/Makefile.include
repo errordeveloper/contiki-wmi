@@ -18,7 +18,7 @@ endef
 # Tools and flags
 
 # Set up cross compiler and toolchain definitions.
-CROSS_COMPILE ?= arm-elf-
+CROSS_COMPILE ?= arm-softfloat-eabi-
 AS	= $(CROSS_COMPILE)as
 LD	= $(CROSS_COMPILE)ld
 CC	= $(CROSS_COMPILE)gcc
@@ -41,7 +41,7 @@ CFLAGS_MISC  ?= -pipe
 CFLAGS := $(CFLAGS_PLAT) $(CFLAGS_WARN) $(CFLAGS_OPT) $(CFLAGS_DEBUG) $(CFLAGS_MISC) $(CFLAGS)
 
 # Thumb flags, used for building most objects
-CFLAGS_THUMB ?= -mthumb -mcallee-super-interworking
+CFLAGS_THUMB ?= -mthumb #-mcallee-super-interworking
 
 # Linker flags
 LINKERSCRIPT ?= $(MC1322X)/mc1322x.lds

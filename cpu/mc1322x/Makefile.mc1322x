@@ -45,7 +45,7 @@ LINKERSCRIPT = $(CONTIKI_CPU)/mc1322x.lds
 STARTUP=$(OBJECTDIR)/start.o
 
 ARCH_FLAGS= -mcpu=arm7tdmi-s -mthumb-interwork -march=armv4t -mtune=arm7tdmi-s -DCONFIG_ARM -D__ARM__ #-Wcast-align
-THUMB_FLAGS= -mthumb #-mcallee-super-interworking
+THUMB_FLAGS= -mthumb -mcallee-super-interworking
 ARM_FLAGS= -marm
 
 CFLAGSNO = -I. -I$(CONTIKI)/core -I$(CONTIKI_CPU) -I$(CONTIKI_CPU)/loader \
@@ -120,12 +120,12 @@ symbols.c:
 
 TOOLS = $(CONTIKIMC1322X)/tools/
 
-%.flash: %_$(TARGET).bin
+%.load: %_$(TARGET).bin
 	perl $(TOOLS)/mc1322x-load.pl -e -t $(UDEV_UART) \
 		-f $<
 
-%.flash-reset: $_$(TARGET).bin $(TOOLS)/ftditools/bbmc
+%.load-reset: %_$(TARGET).bin
 	perl $(TOOLS)/mc1322x-load.pl -e -t $(UDEV_UART) \
-		-f %_$(TARGET).bin \
+		-f $< \
 		-c 'bbmc -l $(TARGET) reset'
 
