@@ -4,5 +4,5 @@
 ## copletition can be used with ease.
 
 ## make.[]	make TARGET=[]
-freescale-usb	freescale-mc1322xUSB
+freescale-usb	freescale-1322xusb
 econotag	redbee-econotag
