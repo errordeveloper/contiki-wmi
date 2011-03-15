@@ -1,7 +1,5 @@
 /*
- * Copyright (c) 2010, Mariano Alvira <mar@devl.org> and other contributors
- * to the MC1322x project (http://mc1322x.devl.org) and Contiki.
- *
+ * Copyright (c) 2006, Swedish Institute of Computer Science.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,49 +26,19 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * This file is part of the Contiki OS.
+ * This file is part of the Contiki operating system.
  *
+ * Author: Adam Dunkels <adam@sics.se>
  *
+ * $Id$
  */
 
-#include <stdio.h>
-#include "contiki.h"
-#include "mc1322x.h"
-#include <sys/types.h>
+#ifndef __NODE_ID_H__
+#define __NODE_ID_H__
 
-int raise(void)
-{
-	return 0;
-}
+void node_id_restore(void);
+void node_id_burn(unsigned short node_id);
 
-void srand(unsigned int seed) {
-	*MACA_RANDOM = seed;
-}
+extern unsigned short node_id;
 
-int rand(void) {
-	return (int)*MACA_RANDOM;
-}
-
-extern int  __HEAP_START;
-extern int  __HEAP_END;
-
-/* #if 0 */
-caddr_t _sbrk ( int incr )
-{
-	static unsigned char *heap = NULL;
-	unsigned char *prev_heap;
-
-	if (heap == NULL) {
-		heap = (unsigned char *)&__HEAP_START;
-	}
-	prev_heap = heap;
-	/* check removed to show basic approach */
-
-	if((heap + incr) >= (unsigned char *)&__HEAP_END) return((void *)-1);
-
-	heap += incr;
-
-	return (caddr_t) prev_heap;
-}
-/* #endif */
-
+#endif /* __NODE_ID_H__ */
