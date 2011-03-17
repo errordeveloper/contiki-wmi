@@ -46,6 +46,8 @@
 #include "packet.h"
 #include "uart1.h"
 #include "utils.h"
+#include "i2c.h"
+// TODO: #include "spi.h"
 #include "asm.h"
 
 #endif

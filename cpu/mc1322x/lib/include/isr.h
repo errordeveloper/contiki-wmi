@@ -98,6 +98,7 @@ static volatile struct ITC_struct * const ITC = (void *) (INTBASE);
 #define INTSRC_OFF           (0x30)
 #define INTFRC_OFF           (0x34)
 #define NIPEND_OFF           (0x38)
+#define FIPEND_OFF           (0x3C)
 
 static volatile uint32_t * const INTCNTL   =   ((volatile uint32_t *) (INTBASE + INTCNTL_OFF));
 static volatile uint32_t * const INTENNUM  =   ((volatile uint32_t *) (INTBASE + INTENNUM_OFF));
@@ -106,6 +107,7 @@ static volatile uint32_t * const INTENABLE =   ((volatile uint32_t *) (INTBASE +
 static volatile uint32_t * const INTSRC    =   ((volatile uint32_t *) (INTBASE + INTSRC_OFF));
 static volatile uint32_t * const INTFRC    =   ((volatile uint32_t *) (INTBASE + INTFRC_OFF));
 static volatile uint32_t * const NIPEND    =   ((volatile uint32_t *) (INTBASE + NIPEND_OFF));
+static volatile uint32_t * const FIPEND	   =   ((volatile uint32_t *) (INTBASE + FIPEND_OFF));
 
 enum interrupt_nums {
 	INT_NUM_ASM = 0,
@@ -165,6 +167,9 @@ extern void cal_isr(void) __attribute__((weak));
 extern void uart1_isr(void) __attribute__((weak));
 
 extern void maca_isr(void) __attribute__((weak));
+
+extern void i2p_isr(void) __attribute__((weak));
+extern void spi_isr(void) __attribute__((weak));
 
 extern void asm_isr(void) __attribute__((weak));
 

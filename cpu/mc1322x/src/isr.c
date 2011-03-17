@@ -87,6 +87,15 @@ void irq(void)
 				cal_isr();
 			}
 		}
+
+		if(bit_is_set(pending, INT_NUM_I2C)) {
+			if(i2c_isr != 0) { i2c_isr(); }
+		}
+
+		if(bit_is_set(pending, INT_NUM_SPI)) {
+			if(spi_isr != 0) { spi_isr(); }
+		}
+
 		if(bit_is_set(pending, INT_NUM_ASM)) {
 			if(asm_isr != 0) { asm_isr(); }
 		}
