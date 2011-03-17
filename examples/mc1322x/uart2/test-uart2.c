@@ -46,7 +46,7 @@
 #include <stdio.h> /* For printf() */
 
 /*---------------------------------------------------------------------------*/
-PROCESS(uart2_test, "Testing UART2");
+PROCESS(uart2_test, "Testing UART2 with loopback");
 AUTOSTART_PROCESSES(&uart2_test);
 /*---------------------------------------------------------------------------*/
 uint8_t test_char = 255;
@@ -54,14 +54,9 @@ PROCESS_THREAD(uart2_test, ev, data)
 {
   PROCESS_BEGIN();
 
-  // uart2_init(INC,MOD,SAMP);
+  uart2_init(INC,MOD,SAMP);
 
   while(test_char--) {
-
-    /*
-    PROCESS_WAIT_EVENT_UNTIL(ev == sensors_event &&
-			   data == &adxl345_sensor);
-    */
 
     printf("put: %d\n", test_char);
 
