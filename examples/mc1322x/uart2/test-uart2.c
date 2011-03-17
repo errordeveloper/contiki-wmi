@@ -41,6 +41,8 @@
 
 #include "contiki.h"
 
+#include "uart1.h"
+
 #include <stdio.h> /* For printf() */
 
 /*---------------------------------------------------------------------------*/
@@ -51,6 +53,8 @@ uint8_t test_char = 255;
 PROCESS_THREAD(uart2_test, ev, data)
 {
   PROCESS_BEGIN();
+
+  // uart2_init(INC,MOD,SAMP);
 
   while(test_char--) {
 
