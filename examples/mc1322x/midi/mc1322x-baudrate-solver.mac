@@ -1,0 +1,8 @@
+BAUD: 31250;
+
+PBUS: 24000000;
+
+
+UMOD: 9999;
+
+for SAMP in [1, 8, 16] do disp(float(solve( BAUD = ( ( PBUS / SAMP ) * ( UINC + 1 ) / UMOD ) )));
