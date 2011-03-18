@@ -1,4 +1,4 @@
-CONTIKI_PROJECT = print-values
+CONTIKI_PROJECT = print-values broadcast-tx broadcast-rx
 
 PROJECT_SOURCEFILES += uart2.c
 

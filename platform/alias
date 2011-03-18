@@ -6,3 +6,5 @@
 ## make.[]	make TARGET=[]
 freescale-usb	freescale-1322xusb
 econotag	redbee-econotag
+
+cooja		cooja
