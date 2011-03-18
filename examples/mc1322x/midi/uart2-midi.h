@@ -13,11 +13,15 @@
  *
  * Therefore without oversampling it should be
  * more accurate.
- */
+*/
 
 #include "uart1.h"
-#define MIDI_UART2_INC 12
+#define MIDI_UART2_INC 103
 #define MIDI_UART2_MOD MOD
-#define MIDI_UART2_SAMP UCON_SAMP
+#define MIDI_UART2_SAMP 1
+
+/* This is a bit starnge, but it doesn't work
+ * if SMAP is 0, which kind of should .. ?
+*/
 
 #define midi_uart_init() uart2_init(MIDI_UART2_INC,MIDI_UART2_MOD,MIDI_UART2_SAMP)

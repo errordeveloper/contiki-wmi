@@ -1,4 +1,4 @@
-CONTIKI_PROJECT = test-uart2
+CONTIKI_PROJECT = print-values
 
 PROJECT_SOURCEFILES += uart2.c
 
