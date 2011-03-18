@@ -45,29 +45,10 @@
 
 #include <stdio.h> /* For printf() */
 
-#define LOOPBACK_TEST 1
-void loopback_test()
-{
-  uint8_t test_char = 255;
-
-  while(test_char--) {
-    printf("put: %d\n", test_char);
-    uart2_putc(test_char);
-    printf("get: %d\n", uart2_getc());
-  }
-}
-
-#define INPUT_DUMP 2
 void input_dump()
 {
   while(1) uart1_putc(uart2_getc());
 }
-
-
-#ifndef UART2_TEST 
-#define UART2_TEST LOOPBACK_TEST
-#warning "Using default function: loopback_test()"
-#endif
 
 /*---------------------------------------------------------------------------*/
 PROCESS(uart2_test, "Testing UART2 with loopback");
@@ -79,11 +60,7 @@ PROCESS_THREAD(uart2_test, ev, data)
 
   uart2_init(INC,MOD,SAMP);
 
-#if UART2_TEST == LOOPBACK_TEST
-  loopback_test();
-#elif UART2_TEST == INPUT_DUMP
   input_dump();
-#endif
 
   PROCESS_END();
 }
