@@ -58,7 +58,10 @@ void uart1_init(uint16_t inc, uint16_t mod, uint8_t samp) {
 	*UART1_UCON = (1 << 0) | (1 << 1); /* enable receive, transmit */
 	if(samp == UCON_SAMP_16X) 
 		set_bit(*UART1_UCON,UCON_SAMP);
-	*GPIO_FUNC_SEL0 = ( (0x01 << (14*2)) | (0x01 << (15*2)) ); /* set GPIO15-14 to UART (UART1 TX and RX)*/
+	/* set GPIO15-14 to UART (UART1 TX and RX)*/
+	// *GPIO_FUNC_SEL0 = ( (0x01 << (14*2)) | (0x01 << (15*2)) );
+	GPIO->FUNC_SEL.GPIO_14 = 1;
+	GPIO->FUNC_SEL.GPIO_15 = 1;
        
 	/* interrupt when there are this number or more bytes free in the TX buffer*/
 	*UART1_UTXCON = 16;
@@ -84,9 +87,10 @@ void uart2_init(uint16_t inc, uint16_t mod, uint8_t samp) {
 	*UART2_UCON = (1 << 0) | (1 << 1); /* enable receive, transmit */
 	if(samp == UCON_SAMP_16X) 
 		set_bit(*UART2_UCON,UCON_SAMP);
-	/* *GPIO_FUNC_SEL0 = ( (0x01 << (18*2)) | (0x01 << (19*2)) ); // well, 18=16+2 and 19=16+3 */
-	/* Thanks to George Lu (lu-at-goodxense-dot-com) for correction. */
-	*GPIO_FUNC_SEL1 = ( (0x01 << (2*2)) | (0x01 << (3*2)) ); /* set GPIO18-19 to UART (UART2 TX and RX)*/
+	/* set GPIO18-19 to UART (UART2 TX and RX)*/
+	// *GPIO_FUNC_SEL1 = ( (0x01 << (2*2)) | (0x01 << (3*2)) );
+	GPIO->FUNC_SEL.GPIO_18 = 1;
+	GPIO->FUNC_SEL.GPIO_19 = 1;
        
 	/* interrupt when there are this number or more bytes free in the TX buffer*/
 	*UART2_UTXCON = 16;
