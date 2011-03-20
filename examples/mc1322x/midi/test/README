@@ -1,2 +1,33 @@
 For now this directory contains various test scripts for the midi project
 Ruby code has been taken from http://onestepback.org/index.cgi/Tech/Ruby/MulticastingInRuby.red
+
+More examples:
+http://tack.ch/multicast/
+http://www.linuxjournal.com/article/6070
+http://www.linuxjournal.com/article/3041?page=0,1
+http://www.linuxjournal.com/files/linuxjournal.com/linuxjournal/articles/030/3041/3041l1.html
+
+http://www.ibiblio.org/pub/linux/docs/HOWTO/other-formats/html_single/Multicast-HOWTO.html
+http://tldp.org/HOWTO/Adv-Routing-HOWTO/lartc.multicast.html
+
+http://student.cosy.sbg.ac.at/~hpayer/praxis/ipv6mf_pimsm.pdf
+http://student.cosy.sbg.ac.at/~hpayer/praxis/presentation.pdf
+
+http://www.cost290.org/td2004/tds/td04010.pdf
+
+http://troglobit.com/pimd.shtml
+http://troglobit.com/mrouted.shtml
+
+http://fivebits.net/proj/mrd6
+https://github.com/hugosantos/mrd6
+
+http://tools.ietf.org/html/rfc2362
+http://tools.ietf.org/html/rfc2375
+
+http://en.wikipedia.org/wiki/Multicast
+http://en.wikipedia.org/wiki/IP_multicast
+
+http://www.opennet.ru/docs/HOWTO/Linux+IPv6-HOWTO/index.html
+
+Misc:
+http://www.humatic.de/htools/nmj/
