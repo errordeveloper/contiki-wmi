@@ -1990,6 +1990,12 @@ CCIF extern uip_lladdr_t uip_lladdr;
 /** \brief set IP address a to the link local all-nodes multicast address */
 #define uip_create_linklocal_allnodes_mcast(a) uip_ip6addr(a, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001)
 
+/** \brief set IP address a to the link local multicast group address
+ *   with group-id g, see RFC2375 for correct values. It should not be:
+ * FF0X::0:0:[100-12A],FF0X::0:0:[201,202] or FF0X::2:{0000,7FFD,7FFE,7FFF,8000,FFFF}
+ */
+#define uip_create_linklocal_mcast_group(a, g) uip_ip6addr(a, 0xff02, 0, 0, 0, 0, 0, 0, g)
+
 /** \brief set IP address a to the link local all-routers multicast address */
 #define uip_create_linklocal_allrouters_mcast(a) uip_ip6addr(a, 0xff02, 0, 0, 0, 0, 0, 0, 0x0002)
 #define uip_create_linklocal_prefix(addr) do { \

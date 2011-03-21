@@ -1,10 +1,10 @@
-CONTIKI_PROJECT = print-values broadcast-tx broadcast-rx
+CONTIKI_PROJECT = print-values broadcast-tx broadcast-rx mmc-tx mmc-rx
 
 PROJECT_SOURCEFILES += uart2.c
 
 all: $(CONTIKI_PROJECT)
 
-#UIP_CONF_IPV6=1
+UIP_CONF_IPV6=1
 
-CONTIKI = ../../..
+CONTIKI = ../../../../
 include $(CONTIKI)/Makefile.include
