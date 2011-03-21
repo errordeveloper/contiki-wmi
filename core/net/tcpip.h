@@ -242,6 +242,7 @@ CCIF struct uip_udp_conn *udp_new(const uip_ipaddr_t *ripaddr, u16_t port,
  * memory could not be allocated for the connection.
  */
 struct uip_udp_conn *udp_broadcast_new(u16_t port, void *appstate);
+struct uip_udp_conn *udp_multicast_new(u16_t port, void *appstate);
 
 /**
  * Bind a UDP connection to a local port.
