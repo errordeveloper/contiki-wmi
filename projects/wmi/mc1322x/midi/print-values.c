@@ -49,7 +49,8 @@ void input_dump()
 {
   // while(1) uart1_putc(uart2_getc());
 
-  while(1) printf("%d ", uart2_getc());
+  while(1) { midi_uart_init();
+	  printf("%d ", uart2_getc()); }
 
 }
 
