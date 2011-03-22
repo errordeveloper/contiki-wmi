@@ -27,3 +27,4 @@
 #define midi_uart_init() uart2_init(MIDI_UART2_INC,MIDI_UART2_MOD,MIDI_UART2_SAMP)
 
 #define midi_uart_getc() uart2_getc()
+#define midi_uart_putc() uart2_putc()

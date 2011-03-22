@@ -1,4 +1,4 @@
-CONTIKI_PROJECT = print-values midi-rime-bctx midi-rime-bcrx test-uip-bctx test-uip-bcrx
+CONTIKI_PROJECT = print-values midi-rime-bctx midi-rime-bcrx test-uip-bctx test-uip-bcrx test-psock-server
 
 PROJECT_SOURCEFILES += uart2.c
 

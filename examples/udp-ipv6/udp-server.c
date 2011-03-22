@@ -51,6 +51,8 @@ tcpip_handler(void)
   static int seq_id;
   char buf[MAX_PAYLOAD_LEN];
 
+  PRINTF("Entered tcpip_handler() here.\n");
+
   if(uip_newdata()) {
     ((char *)uip_appdata)[uip_datalen()] = 0;
     PRINTF("Server received: '%s' from ", (char *)uip_appdata);
@@ -88,6 +90,7 @@ print_local_addresses(void)
 PROCESS_THREAD(udp_server_process, ev, data)
 {
 #if UIP_CONF_ROUTER
+#warning "ROUTER MODE"
   uip_ipaddr_t ipaddr;
 #endif /* UIP_CONF_ROUTER */
 
@@ -95,6 +98,7 @@ PROCESS_THREAD(udp_server_process, ev, data)
   PRINTF("UDP server started\n");
 
 #if UIP_CONF_ROUTER
+#warning "ROUTER MODE"
   uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 0);
   uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr);
   uip_ds6_addr_add(&ipaddr, 0, ADDR_AUTOCONF);

@@ -23,6 +23,8 @@ include $(CONTIKI)/Makefile.include
 # and it will not break on other.
 P = env PATH="/sbin:/usr/sbin/:/usr/local/sbin/:$(PATH)"
 
+XTERM ?= urxvt # $(TERM) is not always the same as command
+
 $(CONTIKI)/tools/tunslip6:	$(CONTIKI)/tools/tunslip6.c
 	(cd $(CONTIKI)/tools && $(MAKE) tunslip6)
 
@@ -31,8 +33,17 @@ $(CONTIKI)/tools/tunslip6:	$(CONTIKI)/tools/tunslip6.c
 #endif
 
 connect-router:	$(CONTIKI)/tools/tunslip6
-	sudo $(P) $(CONTIKI)/tools/tunslip6 -L -s `readlink -e $(UDEV_UART)` aaaa::1/64
-	# readlink -e is needed because it segafaults due to unexpected long name
+	sudo $(P) \
+	$(CONTIKI)/tools/tunslip6 -L \
+	-s `readlink -e $(UDEV_UART)` aaaa::1/64
+	# readlink -e is needed because it segafaults
+	# due to unexpected long name
+
+connect-router-xterm:	$(CONTIKI)/tools/tunslip6
+	$(XTERM) -title "Contiki RPL border router log" \
+		-e sudo $(P) \
+		$(CONTIKI)/tools/tunslip6 -L \
+		-s `readlink -e $(UDEV_UART)` aaaa::1/64
 
 connect-router-cooja:	$(CONTIKI)/tools/tunslip6
 	sudo $(P) $(CONTIKI)/tools/tunslip6 $(ARG_UART) -a localhost aaaa::1/64

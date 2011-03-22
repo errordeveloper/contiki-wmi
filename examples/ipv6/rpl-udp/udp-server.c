@@ -60,6 +60,8 @@ tcpip_handler(void)
 {
   char *appdata;
 
+  PRINTF("Entered the tcpip_handler() here.\n");
+
   if(uip_newdata()) {
     appdata = (char *)uip_appdata;
     appdata[uip_datalen()] = 0;
@@ -157,14 +159,19 @@ PROCESS_THREAD(udp_server_process, ev, data)
   PRINTF(" local/remote port %u/%u\n", UIP_HTONS(server_conn->lport),
          UIP_HTONS(server_conn->rport));
 
+  char x1=1;
+
   while(1) {
+
+    if (x1) { PRINTF("Entered while(1) here.\n"); x1=1; }
+
     PROCESS_YIELD();
     if(ev == tcpip_event) {
       tcpip_handler();
-    } else if (ev == sensors_event && data == &button_sensor) {
+    } /* else if (ev == sensors_event && data == &button_sensor) {
       PRINTF("Initiaing global repair\n");
       rpl_repair_dag(rpl_get_dag(RPL_ANY_INSTANCE));
-    }
+    } */
   }
 
   PROCESS_END();
