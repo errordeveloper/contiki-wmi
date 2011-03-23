@@ -56,20 +56,21 @@ void uart2_isr(void) { /*
 	/* put it here for now */
 
 	/* XXX: could it be?
+	#if UART2_CONF_TXI_MASKED
 	#if UART2_CONF_RXI_MASKED
 	#else ETC ..?  */
 
-	if (!bit_is_set(*UART2_UCON, RX_READY_MASK)) {
+	if (!bit_is_set(*UART2_UCON, TX_READY_MASK)) {
 
-	} else if (uart2_txi()) {
+	} else if (uart2_txi_check()) {
 
-	  if (uart2_txi_handler != 0) { uart2_rxi_handler(); }
+	  if (uart2_txi_handler != 0) { uart2_txi_handler(); }
 	  // else {...}
 	}
 
-	if (!bit_is_set(*UART2_UCON, TX_READY_MASK)) {
+	if (!bit_is_set(*UART2_UCON, RX_READY_MASK)) {
 
-	} else if (uart2_rxt())
+	} else if (uart2_rxi_check())
 	{
 	  if (uart2_rxi_handler != 0) { uart2_rxi_handler(); }
 	  // else {...}

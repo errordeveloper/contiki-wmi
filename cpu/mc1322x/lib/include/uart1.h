@@ -168,8 +168,8 @@ void uart1_putc(char c);
 #define uart1_can_get() (*UART1_URXCON > 0)
 uint8_t uart1_getc(void);
 
-#define uart1_txi() bit_is_set(*UART1_USTAT, TX_READY)
-#define uart1_rxi() bit_is_set(*UART1_USTAT, RX_READY)
+#define uart1_txi_check() bit_is_set(*UART1_USTAT, TX_READY)
+#define uart1_rxi_check() bit_is_set(*UART1_USTAT, RX_READY)
 extern void uart1_txi_handler(void)  __attribute__((weak));
 extern void uart1_rxi_handler(void)  __attribute__((weak));
 
@@ -178,8 +178,8 @@ void uart2_putc(char c);
 #define uart2_can_get() (*UART2_URXCON > 0)
 uint8_t uart2_getc(void);
 
-#define uart2_txi() bit_is_set(*UART2_USTAT, TX_READY)
-#define uart2_rxi() bit_is_set(*UART2_USTAT, RX_READY)
+#define uart2_txi_check() bit_is_set(*UART2_USTAT, TX_READY)
+#define uart2_rxi_check() bit_is_set(*UART2_USTAT, RX_READY)
 extern void uart2_txi_handler(void)  __attribute__((weak));
 extern void uart2_rxi_handler(void)  __attribute__((weak));
 
