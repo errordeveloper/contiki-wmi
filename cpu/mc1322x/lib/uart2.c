@@ -55,7 +55,11 @@ void uart2_isr(void) { /*
 
 	/* put it here for now */
 
-	if (!bit_is_set(*UART2_USTAT, RX_READY_MASK)) {
+	/* XXX: could it be?
+	#if UART2_CONF_RXI_MASKED
+	#else ETC ..?  */
+
+	if (!bit_is_set(*UART2_UCON, RX_READY_MASK)) {
 
 	} else if (uart2_txi()) {
 
@@ -63,7 +67,7 @@ void uart2_isr(void) { /*
 	  // else {...}
 	}
 
-	if (!bit_is_set(*UART2_USTAT, TX_READY_MASK)) {
+	if (!bit_is_set(*UART2_UCON, TX_READY_MASK)) {
 
 	} else if (uart2_rxt())
 	{
