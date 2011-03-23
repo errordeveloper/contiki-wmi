@@ -42,18 +42,6 @@ volatile char u2_tx_buf[1024];
 volatile uint32_t u2_head, u2_tail;
 
 void uart2_isr(void) { /*
- 	while( *UART2_UTXCON != 0 ) {
-		if (u2_head == u2_tail) {
-			disable_irq(UART2);
-			return;
-		}
-		*UART2_UDATA = u2_tx_buf[u2_tail];
-		u2_tail++;		
-		if (u2_tail >= sizeof(u2_tx_buf))
-			u2_tail = 0;
-	} */
-
-	/* put it here for now */
 
 	/* XXX: could it be?
 	#if UART2_CONF_TXI_MASKED
@@ -65,7 +53,7 @@ void uart2_isr(void) { /*
 	} else */ if (uart2_txi_check()) {
 
 	  if (uart2_txi_handler != 0) { uart2_txi_handler(); }
-	  // else {...}
+	  else { uart2_isr_fallback(); }
 	}
 
 	/* if (!bit_is_set(*UART2_UCON, RX_READY_MASK)) {
@@ -73,7 +61,20 @@ void uart2_isr(void) { /*
 	} else */ if (uart2_rxi_check())
 	{
 	  if (uart2_rxi_handler != 0) { uart2_rxi_handler(); }
-	  // else {...}
+	  else { uart2_isr_fallback(); }
+	}
+}
+
+void uart2_isr_fallback(void) {
+	while( *UART2_UTXCON != 0 ) {
+		if (u2_head == u2_tail) {
+			disable_irq(UART2); // Also this uncertain ..
+			return;
+		}
+		*UART2_UDATA = u2_tx_buf[u2_tail];
+		u2_tail++;
+		if (u2_tail >= sizeof(u2_tx_buf))
+			u2_tail = 0;
 	}
 }
 
@@ -93,7 +94,7 @@ void uart2_putc(char c) {
 		if (u2_head == u2_tail) { /* drop chars when no room */
 			if (u2_head) { u2_head -=1; } else { u2_head = sizeof(u2_tx_buf); }
 		}
-		enable_irq(UART2);
+		enable_irq(UART2); // Should this be after '}' ?
 	}
 }
 

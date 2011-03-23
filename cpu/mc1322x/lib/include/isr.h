@@ -165,7 +165,9 @@ extern void kbi7_isr(void) __attribute__((weak));
 extern void cal_isr(void) __attribute__((weak));
 
 extern void uart1_isr(void) __attribute__((weak));
+extern void uart1_isr_fallback(void); // __attribute__((weak));
 extern void uart2_isr(void) __attribute__((weak));
+extern void uart2_isr_fallback(void); // __attribute__((weak));
 
 extern void maca_isr(void) __attribute__((weak));
 
