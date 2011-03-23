@@ -36,10 +36,12 @@
 #include <mc1322x.h>
 #include <stdint.h>
 
+#include <stdio.h>
+
 volatile char u2_tx_buf[1024];
 volatile uint32_t u2_head, u2_tail;
 
-void uart2_isr(void) {
+void uart2_isr(void) { /*
  	while( *UART2_UTXCON != 0 ) {
 		if (u2_head == u2_tail) {
 			disable_irq(UART2);
@@ -49,6 +51,24 @@ void uart2_isr(void) {
 		u2_tail++;		
 		if (u2_tail >= sizeof(u2_tx_buf))
 			u2_tail = 0;
+	} */
+
+	/* put it here for now */
+
+	if (!bit_is_set(*UART2_USTAT, RX_READY_MASK)) {
+
+	} else if (uart2_txi()) {
+
+	  if (uart2_txi_handler != 0) { uart2_rxi_handler(); }
+	  // else {...}
+	}
+
+	if (!bit_is_set(*UART2_USTAT, TX_READY_MASK)) {
+
+	} else if (uart2_rxt())
+	{
+	  if (uart2_rxi_handler != 0) { uart2_rxi_handler(); }
+	  // else {...}
 	}
 }
 

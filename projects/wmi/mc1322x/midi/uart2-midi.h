@@ -24,7 +24,18 @@
  * if SMAP is 0, which kind of should .. ?
 */
 
+#if 0 /* These functions are unsuitable */
+
 #define midi_uart_init() uart2_init(MIDI_UART2_INC,MIDI_UART2_MOD,MIDI_UART2_SAMP)
 
 #define midi_uart_getc() uart2_getc()
 #define midi_uart_putc() uart2_putc()
+
+#else
+
+#define midi_uart_init() uart2_midi_init(MIDI_UART2_INC,MIDI_UART2_MOD,MIDI_UART2_SAMP)
+
+#define midi_uart_getc() uart2_midi_getc()
+#define midi_uart_putc() uart2_midi_putc()
+
+#endif

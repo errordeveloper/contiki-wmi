@@ -28,6 +28,7 @@
  */
 
 #include <uart2-midi.h>
+#include <uart1.h>
 
 #include "contiki.h"
 #include "lib/random.h"
@@ -59,6 +60,13 @@ static uip_ipaddr_t server_ipaddr;
 /*---------------------------------------------------------------------------*/
 PROCESS(udp_client_process, "UDP client process");
 AUTOSTART_PROCESSES(&udp_client_process);
+/*---------------------------------------------------------------------------*/
+void 
+uart2_rx_handler(void){
+
+PRINTF("+");
+
+}
 /*---------------------------------------------------------------------------*/
 static void
 tcpip_handler(void)
@@ -168,6 +176,8 @@ PROCESS_THREAD(udp_client_process, ev, data)
 	UIP_HTONS(client_conn->lport), UIP_HTONS(client_conn->rport));
 
   midi_uart_init();
+
+  PRINTF("midi_uart_init() done.\n");
 
   // etimer_set(&periodic, SEND_INTERVAL);
   while(1) {

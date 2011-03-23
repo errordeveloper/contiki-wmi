@@ -83,12 +83,12 @@ void uart2_init(uint16_t inc, uint16_t mod, uint8_t samp) {
 	/* see Section 11.5.1.2 Alternate Modes */
 	/* you must enable the peripheral first BEFORE setting the function in GPIO_FUNC_SEL */
 	/* From the datasheet: "The peripheral function will control operation of the pad IF */
-	/* THE PERIPHERAL IS ENABLED. */
-	*UART2_UCON = (1 << 0) | (1 << 1); /* enable receive, transmit */
-	if(samp == UCON_SAMP_16X) 
-		set_bit(*UART2_UCON,UCON_SAMP);
+	/* THE PERIPHERAL IS ENABLED. Can override with U2_ENABLE_DEFAULT. */
+	*UART2_UCON = U2_ENABLE_DEFAULT;
+
+	set_bit(*UART2_UCON, samp);
+
 	/* set GPIO18-19 to UART (UART2 TX and RX)*/
-	// *GPIO_FUNC_SEL1 = ( (0x01 << (2*2)) | (0x01 << (3*2)) );
 	GPIO->FUNC_SEL.GPIO_18 = 1;
 	GPIO->FUNC_SEL.GPIO_19 = 1;
        

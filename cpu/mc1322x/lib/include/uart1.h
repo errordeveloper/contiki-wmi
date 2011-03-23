@@ -70,15 +70,118 @@
 #define UART2_UCTS       ((volatile uint32_t *) ( UART2_BASE + UCTS   ))
 #define UART2_UBRCNT     ((volatile uint32_t *) ( UART2_BASE + UBRCNT ))
 
+
+/** \name UART Control Register (UCON) <i>read-write</i>
+ * \brief is used to specify transmission parameters, such as
+ *        flow control, stop bits, parity, etc.
+ * \{
+*/
+enum {
+
+  LOOPBACK_TEST		= 15,
+  RX_READY_MASK		= 14,
+  TX_READY_MASK		= 13,
+  FLOW_CONTROL_ENABLE	= 12,
+  FLOW_CONTROL_POLARITY	= 11,
+  OVERSAMPLING		= 10,
+  TX_OUTPUT_ENABLE	= 7,
+  TX_TEST		= 6,
+  SEND_BREAK		= 5,
+  STOP_BITS		= 4,
+  PARITY_TYPE		= 3,
+  PARITY_ENABLE		= 2,
+  RX_ENABLE		= 1,
+  TX_ENABLE		= 0
+
+}
+/** \} */
+
+#define UART_ON		( ( 1 << TX_ENABLE ) | ( 1 << RX_ENABLE ) )
+#define UART_OFF	( ( 0 << TX_ENABLE ) | ( 0 << RX_ENABLE ) )
+
+
+#define U_PARITY_OFF	( 0 << PARITY_ENABLE )  // default: disabled=0
+#define U_PARITY_ON	( 1 << PARITY_ENABLE )	//           enabled=1
+
+#define U_EVEN_PARITY	( 0 << PARITY_TYPE )	// default: even=0
+#define U_ODD_PARITY	( 1 << PARITY_TYPE ) 	//           odd=1
+
+#define U_ONE_STOP_BIT	( 0 << STOP_BITS )	// default: 1bit=0
+#define U_TWO_STOP_BIT	( 1 << STOP_BITS )	//          2bit=1
+
+#define U_BREAK_OFF	( 0 << SEND_BREAK )	// default: off=0
+#define U_BREAK_ON	( 1 << SEND_BREAK )	//           on=1
+
+#define U_FC_RTS_AL	( 0 << FLOW_CONTROL_POLARITY ) // default: active-low=0
+#define U_FC_RTS_AH	( 1 << FLOW_CONTROL_POLARITY ) //         active-high=1
+
+#define U_FC_OFF	( 0 << FLOW_CONTROL_ENABLE ) // default: off=0
+#define U_FC_ON		( 1 << FLOW_CONTROL_ENABLE ) //           on=1
+
+#define U_TXI_ON	( 0 << TX_READY_MASK )	// default: enabled=0
+#define U_TXI_OFF	( 1 << TX_READY_MASK )	//           masked=1
+
+#define U_RXI_ON	( 0 << RX_READY_MASK )	// default: enabled=0
+#define U_RXI_OFF	( 1 << RX_READY_MASK )	//           masked=1
+
+#ifndef U1_ENABLE_DEFAULT
+#define U1_ENABLE_DEFAULT UART_ON
+#else
+#warning "U1_ENABLE_DEFAULT is not default"
+#endif
+
+#ifndef U2_ENABLE_DEFAULT
+#define U2_ENABLE_DEFAULT UART_ON
+#else
+#warning "U2_ENABLE_DEFAULT is not default"
+#endif
+
+#define U_EN_FC	( UART_ON | U_FC_ON )
+
+#define U_EN_FCEP ( UART_ON|U_FC_ON|U_PARITY_ON|U_EVEN_PARITY )
+#define U_EN_FCOP ( UART_ON|U_FC_ON|U_PARTIY_ON|U_ODD_PARITY )
+
+/** \name UART Status Register (USTAT) <i>read-only</i>
+ * \brief indicates interrupt request status and any errors
+ *        that have been detected during transmission, such
+ *        as FIFO buffer overflow or underflow, parity error,
+ *        and frame, start, or stop bit error.
+ * \{
+*/
+enum {
+
+  TX_READY		= 7,
+  RX_READY		= 6,
+  RX_FIFO_UNDERRUN	= 5,
+  TX_FIFO_OVERRUN	= 4,
+  TX_FIFO_OVERRUN	= 3,
+  STOP_BIT_ERROR	= 2,
+  PARITY_ERROR		= 1,
+  START_BIT_ERROR	= 0
+
+}
+/** \} */
+
+
 extern volatile uint32_t  u1_head, u1_tail;
 void uart1_putc(char c);
 #define uart1_can_get() (*UART1_URXCON > 0)
 uint8_t uart1_getc(void);
 
+#define uart1_txi() bit_is_set(*UART1_USTAT, TX_READY)
+#define uart1_rxi() bit_is_set(*UART1_USTAT, RX_READY)
+extern void uart1_txi_handler(void)  __attribute__((weak));
+extern void uart1_rxi_handler(void)  __attribute__((weak));
+
 extern volatile uint32_t  u2_head, u2_tail;
 void uart2_putc(char c);
 #define uart2_can_get() (*UART2_URXCON > 0)
 uint8_t uart2_getc(void);
+
+#define uart2_txi() bit_is_set(*UART2_USTAT, TX_READY)
+#define uart2_rxi() bit_is_set(*UART2_USTAT, RX_READY)
+extern void uart2_txi_handler(void)  __attribute__((weak));
+extern void uart2_rxi_handler(void)  __attribute__((weak));
 
 
 #endif
