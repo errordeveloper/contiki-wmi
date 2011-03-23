@@ -51,8 +51,6 @@ void uart1_isr(void) {
 			u1_tail = 0;
 	}
 
-	/* put it here for now */
-	if (uart1_rx_handler != 0) { uart1_rx_handler(); }
 }
 
 void uart1_putc(char c) {

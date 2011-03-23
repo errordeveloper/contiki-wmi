@@ -91,9 +91,9 @@ enum {
   PARITY_TYPE		= 3,
   PARITY_ENABLE		= 2,
   RX_ENABLE		= 1,
-  TX_ENABLE		= 0
+  TX_ENABLE		= 0,
 
-}
+};
 /** \} */
 
 #define UART_ON		( ( 1 << TX_ENABLE ) | ( 1 << RX_ENABLE ) )
@@ -153,13 +153,13 @@ enum {
   TX_READY		= 7,
   RX_READY		= 6,
   RX_FIFO_UNDERRUN	= 5,
-  TX_FIFO_OVERRUN	= 4,
+  RX_FIFO_OVERRUN	= 4,
   TX_FIFO_OVERRUN	= 3,
   STOP_BIT_ERROR	= 2,
   PARITY_ERROR		= 1,
-  START_BIT_ERROR	= 0
+  START_BIT_ERROR	= 0,
 
-}
+};
 /** \} */
 
 

@@ -62,9 +62,16 @@ PROCESS(udp_client_process, "UDP client process");
 AUTOSTART_PROCESSES(&udp_client_process);
 /*---------------------------------------------------------------------------*/
 void 
-uart2_rx_handler(void){
+uart2_rxi_handler(void){
 
-PRINTF("+");
+// PRINTF("r");
+
+}
+/*---------------------------------------------------------------------------*/
+void 
+uart2_txi_handler(void){
+
+// PRINTF("t");
 
 }
 /*---------------------------------------------------------------------------*/
