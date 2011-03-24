@@ -41,7 +41,7 @@
 volatile char u2_tx_buf[1024];
 volatile uint32_t u2_head, u2_tail;
 
-void uart2_isr(void) { /*
+void uart2_isr(void) {
 
 	/* XXX: could it be?
 	#if UART2_CONF_TXI_MASKED
@@ -63,12 +63,14 @@ void uart2_isr(void) { /*
 	  if (uart2_rxi_handler != 0) { uart2_rxi_handler(); }
 	  else { uart2_isr_fallback(); }
 	}
+
+	//printf("%x\n", *UART2_URXCON);
 }
 
 void uart2_isr_fallback(void) {
 	while( *UART2_UTXCON != 0 ) {
 		if (u2_head == u2_tail) {
-			disable_irq(UART2); // Also this uncertain ..
+			// disable_irq(UART2); // Also this uncertain ..
 			return;
 		}
 		*UART2_UDATA = u2_tx_buf[u2_tail];
@@ -78,6 +80,7 @@ void uart2_isr_fallback(void) {
 	}
 }
 
+#if 0
 void uart2_putc(char c) {
 	/* disable UART2 since */
 	/* UART2 isr modifies u2_head and u2_tail */ 
@@ -102,3 +105,4 @@ uint8_t uart2_getc(void) {
 	while(uart2_can_get() == 0) { continue; }
 	return *UART2_UDATA;
 }
+#endif

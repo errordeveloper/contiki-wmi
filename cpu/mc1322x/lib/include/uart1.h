@@ -103,6 +103,9 @@ enum {
 #define UART_ON		( ( 1 << TX_ENABLE ) | ( 1 << RX_ENABLE ) )
 #define UART_OFF	( ( 0 << TX_ENABLE ) | ( 0 << RX_ENABLE ) )
 
+#define UART_TX_ONLY	( ( 1 << TX_ENABLE ) | ( 0 << RX_ENABLE ) )
+#define UART_RX_ONLY	( ( 0 << TX_ENABLE ) | ( 1 << RX_ENABLE ) )
+
 
 #define U_PARITY_OFF	( 0 << PARITY_ENABLE )  // default: disabled=0
 #define U_PARITY_ON	( 1 << PARITY_ENABLE )	//           enabled=1
@@ -135,7 +138,7 @@ enum {
 #endif
 
 #ifndef U2_ENABLE_DEFAULT
-#  define U2_ENABLE_DEFAULT UART_ON
+#  define U2_ENABLE_DEFAULT (UART_RX_ONLY|U_TXI_OFF)
 # else
 #  warning "U2_ENABLE_DEFAULT is not default"
 #endif
@@ -169,23 +172,23 @@ enum {
 /** \} */
 
 #ifndef U1_TXFIFO_SIZE
-#  define U1_TXFIFO_SIZE 30
+#  define U1_TXFIFO_SIZE 31
 # else
 #  warning "U1_TXFIFO_SIZE is not default"
 #endif
 #  ifndef U1_RXFIFO_SIZE
-#  define U1_RXFIFO_SIZE 30
+#  define U1_RXFIFO_SIZE 31
 # else
 #  warning "U1_RXFIFO_SIZE is not default"
 #endif
 
 #ifndef U2_TXFIFO_SIZE
-#  define U2_TXFIFO_SIZE 30
+#  define U2_TXFIFO_SIZE 31
 # else
 #  warning "U2_TXFIFO_SIZE is not default"
 #  endif
 #ifndef U2_RXFIFO_SIZE
-#  define U2_RXFIFO_SIZE 30
+#  define U2_RXFIFO_SIZE 1
 # else
 #  warning "U2_RXFIFO_SIZE is not default"
 #endif

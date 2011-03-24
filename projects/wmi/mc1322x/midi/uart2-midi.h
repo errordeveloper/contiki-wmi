@@ -18,7 +18,7 @@
 #include "uart1.h"
 #define MIDI_UART2_INC 103
 #define MIDI_UART2_MOD MOD
-#define MIDI_UART2_SAMP 1
+#define MIDI_UART2_SAMP 0
 
 /* This is a bit starnge, but it doesn't work
  * if SMAP is 0, which kind of should .. ?

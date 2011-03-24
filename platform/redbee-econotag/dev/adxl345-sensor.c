@@ -83,5 +83,5 @@ static int configure(int type, int c) {
 
 
 /*---------------------------------------------------------------------------*/
-SENSORS_SENSOR(adxl345_sensor, "Temperature", value, configure, status); // register the functions
+SENSORS_SENSOR(adxl345_sensor, "Accelerometer", value, configure, status); // register the functions
 

@@ -80,7 +80,7 @@ void uart1_init(uint16_t inc, uint16_t mod, uint8_t samp) {
 void uart2_init(uint16_t inc, uint16_t mod, uint8_t samp) {
 		
 	/* UART must be disabled to set the baudrate */
-	*UART2_UCON = 0;
+	*UART2_UCON = 0; // can used UART_OFF
 	*UART2_UBRCNT = ( inc << 16 ) | mod; 
 
 	/* see Section 11.5.1.2 Alternate Modes */

@@ -45,6 +45,7 @@
 
 #include <stdio.h> /* For printf() on UART1 */
 
+#if 0
 void input_dump()
 {
   // while(1) uart1_putc(uart2_getc());
@@ -53,7 +54,32 @@ void input_dump()
 	  printf("%d ", uart2_getc()); }
 
 }
+#endif
 
+/*---------------------------------------------------------------------------*/
+void 
+uart2_rxi_handler(void){
+
+  //if(*UART2_URXCON == U2_RXFIFO_SIZE) {
+  
+    printf("%x\n", *UART2_USTAT);
+  
+  //}
+}
+
+/*---------------------------------------------------------------------------*/
+void 
+uart2_txi_handler(void){
+
+  //if(*UART2_UTXCON == U2_TXFIFO_SIZE) {
+  
+    printf("t");
+  
+  //}
+}
+
+
+/*---------------------------------------------------------------------------*/
 
 /*---------------------------------------------------------------------------*/
 PROCESS(uart2_test, "Testing UART2 in MIDI mode");
@@ -65,7 +91,7 @@ PROCESS_THREAD(uart2_test, ev, data)
 
   midi_uart_init();
 
-  input_dump();
+  // input_dump();
 
   PROCESS_END();
 }
