@@ -58,32 +58,35 @@ void input_dump()
 
 int x, s;
 
+/* This need improvements, because x should be a
+ * buffer, the size of which yet to be found */
+#define U2_GET_LOOP_BEGIN(x) while(*UART2_URXCON != 0) { x = *UART2_UDATA
+
+/* This can be done a bit better with switch(),
+ * also 's' should be uniq ... */
+#define U2_DBG_RX_DATA(x) int s = *UART2_USTAT; \
+		  printf(":%i (Err: ", x); \
+		  if(s == 0x80) { printf("N"); } else { \
+	  if(bit_is_set(s, START_BIT_ERROR))	{ printf("F"); } \
+	  if(bit_is_set(s, STOP_BIT_ERROR))	{ printf("S"); } \
+	  if(bit_is_set(s, PARITY_ERROR))	{ printf("P"); } \
+	  if(bit_is_set(s, RX_FIFO_OVERRUN))	{ printf("O"); } \
+	  if(bit_is_set(s, RX_FIFO_UNDERRUN))	{ printf("U"); } \
+		  } printf(" =%x)\n", s)
+
+#define U2_GET_LOOP_END() }
+
 /*---------------------------------------------------------------------------*/
 void 
 uart2_rxi_handler(void){
 
-  while(*UART2_URXCON != 0) {
+/* Test it here and now! */
 
-    x = *UART2_UDATA;
+U2_GET_LOOP_BEGIN(x);
 
-    printf(":%i ", x);
+U2_DBG_RX_DATA(x);
 
-    s = *UART2_USTAT;
-
-    printf("(Err: ");
-    if(s == 0x80) { printf("N");
-
-    } else {
-	    
-	  if(bit_is_set(s, START_BIT_ERROR)) { printf("F"); }
-	  if(bit_is_set(s, STOP_BIT_ERROR)) { printf("S "); }
-	  if(bit_is_set(s, PARITY_ERROR)) { printf("P"); }
-	  if(bit_is_set(s, RX_FIFO_OVERRUN)) { printf("O"); }
-	  if(bit_is_set(s, RX_FIFO_UNDERRUN)) { printf("U"); }
-
-    } printf(" #%x)\n", s);
-
-  }
+U2_GET_LOOP_END();
 
 }
 
@@ -91,13 +94,14 @@ uart2_rxi_handler(void){
 void 
 uart2_txi_handler(void){
 
-  //if(*UART2_UTXCON == U2_TXFIFO_SIZE) {
-  
+#if STILL_TODO
+
     printf("t");
 
     *UART2_UDATA = 0x85;
+
+#endif
   
-  //}
 }
 
 
