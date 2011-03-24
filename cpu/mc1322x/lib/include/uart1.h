@@ -96,6 +96,10 @@ enum {
 };
 /** \} */
 
+/** \name UCON macros
+ * \{
+*/
+
 #define UART_ON		( ( 1 << TX_ENABLE ) | ( 1 << RX_ENABLE ) )
 #define UART_OFF	( ( 0 << TX_ENABLE ) | ( 0 << RX_ENABLE ) )
 
@@ -125,21 +129,23 @@ enum {
 #define U_RXI_OFF	( 1 << RX_READY_MASK )	//           masked=1
 
 #ifndef U1_ENABLE_DEFAULT
-#define U1_ENABLE_DEFAULT UART_ON
-#else
-#warning "U1_ENABLE_DEFAULT is not default"
+#  define U1_ENABLE_DEFAULT UART_ON
+# else
+#  warning "U1_ENABLE_DEFAULT is not default"
 #endif
 
 #ifndef U2_ENABLE_DEFAULT
-#define U2_ENABLE_DEFAULT UART_ON
-#else
-#warning "U2_ENABLE_DEFAULT is not default"
+#  define U2_ENABLE_DEFAULT UART_ON
+# else
+#  warning "U2_ENABLE_DEFAULT is not default"
 #endif
 
 #define U_EN_FC	( UART_ON | U_FC_ON )
 
 #define U_EN_FCEP ( UART_ON|U_FC_ON|U_PARITY_ON|U_EVEN_PARITY )
 #define U_EN_FCOP ( UART_ON|U_FC_ON|U_PARTIY_ON|U_ODD_PARITY )
+
+/** \} */
 
 /** \name UART Status Register (USTAT) <i>read-only</i>
  * \brief indicates interrupt request status and any errors
@@ -162,6 +168,27 @@ enum {
 };
 /** \} */
 
+#ifndef U1_TXFIFO_SIZE
+#  define U1_TXFIFO_SIZE 30
+# else
+#  warning "U1_TXFIFO_SIZE is not default"
+#endif
+#  ifndef U1_RXFIFO_SIZE
+#  define U1_RXFIFO_SIZE 30
+# else
+#  warning "U1_RXFIFO_SIZE is not default"
+#endif
+
+#ifndef U2_TXFIFO_SIZE
+#  define U2_TXFIFO_SIZE 30
+# else
+#  warning "U2_TXFIFO_SIZE is not default"
+#  endif
+#ifndef U2_RXFIFO_SIZE
+#  define U2_RXFIFO_SIZE 30
+# else
+#  warning "U2_RXFIFO_SIZE is not default"
+#endif
 
 extern volatile uint32_t  u1_head, u1_tail;
 void uart1_putc(char c);

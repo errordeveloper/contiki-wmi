@@ -66,7 +66,8 @@ void uart1_init(uint16_t inc, uint16_t mod, uint8_t samp) {
 	GPIO->FUNC_SEL.GPIO_15 = 1;
        
 	/* interrupt when there are this number or more bytes free in the TX buffer*/
-	*UART1_UTXCON = 16;
+	*UART1_UTXCON = U1_TXFIFO_SIZE;
+	*UART1_URXCON = U1_RXFIFO_SIZE;
 
 	u1_head = 0; u1_tail = 0;
 
@@ -95,7 +96,8 @@ void uart2_init(uint16_t inc, uint16_t mod, uint8_t samp) {
 	GPIO->FUNC_SEL.GPIO_19 = 1;
        
 	/* interrupt when there are this number or more bytes free in the TX buffer*/
-	*UART2_UTXCON = 16;
+	*UART2_UTXCON = U2_TXFIFO_SIZE;
+	*UART2_URXCON = U2_RXFIFO_SIZE;
 
 	u2_head = 0; u2_tail = 0;
 
