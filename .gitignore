@@ -26,6 +26,7 @@ symbols.[ch]
 tests/obj_*
 obj_*
 
+logs
 *.log
 
 Makefile.target

@@ -56,15 +56,35 @@ void input_dump()
 }
 #endif
 
+int x, s;
+
 /*---------------------------------------------------------------------------*/
 void 
 uart2_rxi_handler(void){
 
-  //if(*UART2_URXCON == U2_RXFIFO_SIZE) {
-  
-    printf("%x\n", *UART2_USTAT);
-  
-  //}
+  while(*UART2_URXCON != 0) {
+
+    x = *UART2_UDATA;
+
+    printf(":%i ", x);
+
+    s = *UART2_USTAT;
+
+    printf("(Err: ");
+    if(s == 0x80) { printf("N");
+
+    } else {
+	    
+	  if(bit_is_set(s, START_BIT_ERROR)) { printf("F"); }
+	  if(bit_is_set(s, STOP_BIT_ERROR)) { printf("S "); }
+	  if(bit_is_set(s, PARITY_ERROR)) { printf("P"); }
+	  if(bit_is_set(s, RX_FIFO_OVERRUN)) { printf("O"); }
+	  if(bit_is_set(s, RX_FIFO_UNDERRUN)) { printf("U"); }
+
+    } printf(" #%x)\n", s);
+
+  }
+
 }
 
 /*---------------------------------------------------------------------------*/
@@ -74,6 +94,8 @@ uart2_txi_handler(void){
   //if(*UART2_UTXCON == U2_TXFIFO_SIZE) {
   
     printf("t");
+
+    *UART2_UDATA = 0x85;
   
   //}
 }

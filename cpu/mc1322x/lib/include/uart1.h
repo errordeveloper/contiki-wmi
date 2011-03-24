@@ -138,7 +138,7 @@ enum {
 #endif
 
 #ifndef U2_ENABLE_DEFAULT
-#  define U2_ENABLE_DEFAULT (UART_RX_ONLY|U_TXI_OFF)
+#  define U2_ENABLE_DEFAULT UART_ON
 # else
 #  warning "U2_ENABLE_DEFAULT is not default"
 #endif
@@ -188,7 +188,7 @@ enum {
 #  warning "U2_TXFIFO_SIZE is not default"
 #  endif
 #ifndef U2_RXFIFO_SIZE
-#  define U2_RXFIFO_SIZE 1
+#  define U2_RXFIFO_SIZE 31
 # else
 #  warning "U2_RXFIFO_SIZE is not default"
 #endif
