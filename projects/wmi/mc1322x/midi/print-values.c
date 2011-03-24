@@ -56,25 +56,22 @@ void input_dump()
 }
 #endif
 
-int x, s;
+char urxbuf[32], utxbuf[32], status;
 
-/* This need improvements, because x should be a
- * buffer, the size of which yet to be found */
-#define U2_GET_LOOP_BEGIN(x) while(*UART2_URXCON != 0) { x = *UART2_UDATA
+#define U2_GET_LOOP_BEGIN(x) while(*UART2_URXCON != 0) \
+				{ *x = *UART2_UDATA; x++; }
+				/* flush_packet(x); */
 
-/* This can be done a bit better with switch(),
- * also 's' should be uniq ... */
-#define U2_DBG_RX_DATA(x) int s = *UART2_USTAT; \
+/* This can be done a bit better with switch() */
+#define U2_DBG_RX_DATA(x) status = *UART2_USTAT; \
 		  printf(":%i (Err: ", x); \
-		  if(s == 0x80) { printf("N"); } else { \
-	  if(bit_is_set(s, START_BIT_ERROR))	{ printf("F"); } \
-	  if(bit_is_set(s, STOP_BIT_ERROR))	{ printf("S"); } \
-	  if(bit_is_set(s, PARITY_ERROR))	{ printf("P"); } \
-	  if(bit_is_set(s, RX_FIFO_OVERRUN))	{ printf("O"); } \
-	  if(bit_is_set(s, RX_FIFO_UNDERRUN))	{ printf("U"); } \
-		  } printf(" =%x)\n", s)
-
-#define U2_GET_LOOP_END() }
+		  if(status == 0x80) { printf("N"); } else { \
+	  if(bit_is_set(status, START_BIT_ERROR))	{ printf("F"); } \
+	  if(bit_is_set(status, STOP_BIT_ERROR))	{ printf("S"); } \
+	  if(bit_is_set(status, PARITY_ERROR))	{ printf("P"); } \
+	  if(bit_is_set(status, RX_FIFO_OVERRUN))	{ printf("O"); } \
+	  if(bit_is_set(status, RX_FIFO_UNDERRUN))	{ printf("U"); } \
+		  } printf(" =%x)\n", status)
 
 /*---------------------------------------------------------------------------*/
 void 
@@ -82,11 +79,10 @@ uart2_rxi_handler(void){
 
 /* Test it here and now! */
 
-U2_GET_LOOP_BEGIN(x);
+U2_GET_LOOP(x);
 
-U2_DBG_RX_DATA(x);
+// U2_DBG_RX_DATA(x);
 
-U2_GET_LOOP_END();
 
 }
 
