@@ -103,8 +103,8 @@ enum {
 #define UART_ON		( ( 1 << TX_ENABLE ) | ( 1 << RX_ENABLE ) )
 #define UART_OFF	( ( 0 << TX_ENABLE ) | ( 0 << RX_ENABLE ) )
 
-#define UART_TX_ONLY	( ( 1 << TX_ENABLE ) | ( 0 << RX_ENABLE ) )
-#define UART_RX_ONLY	( ( 0 << TX_ENABLE ) | ( 1 << RX_ENABLE ) )
+#define U_TX_ONLY	( ( 1 << TX_ENABLE ) | ( 0 << RX_ENABLE ) )
+#define U_RX_ONLY	( ( 0 << TX_ENABLE ) | ( 1 << RX_ENABLE ) )
 
 
 #define U_PARITY_OFF	( 0 << PARITY_ENABLE )  // default: disabled=0
@@ -138,7 +138,7 @@ enum {
 #endif
 
 #ifndef U2_ENABLE_DEFAULT
-#  define U2_ENABLE_DEFAULT UART_ON
+#  define U2_ENABLE_DEFAULT ( U_RX_ONLY | U_TXI_OFF )
 # else
 #  warning "U2_ENABLE_DEFAULT is not default"
 #endif
@@ -213,5 +213,30 @@ uint8_t uart2_getc(void);
 extern void uart2_txi_handler(void)  __attribute__((weak));
 extern void uart2_rxi_handler(void)  __attribute__((weak));
 
+
+/* This can be done a bit better with switch() */
+#define U2_DBG_RX_DATA(x) status = *UART2_USTAT; \
+		  printf(":%i (Err: ", x); \
+		  if(status == 0x80) { printf("N"); } else { \
+	  if(bit_is_set(status, START_BIT_ERROR))	{ printf("F"); } \
+	  if(bit_is_set(status, STOP_BIT_ERROR))	{ printf("S"); } \
+	  if(bit_is_set(status, PARITY_ERROR))		{ printf("P"); } \
+	  if(bit_is_set(status, RX_FIFO_OVERRUN))	{ printf("O"); } \
+	  if(bit_is_set(status, RX_FIFO_UNDERRUN))	{ printf("U"); } \
+		  } printf(" =%x)\n", status)
+
+
+#define U2_GET_LOOP(x) char *p = &x; \
+	while(*UART2_URXCON != 0) { *(p++) = *UART2_UDATA; }
+
+/* Note that it will only print proper values of USTAT
+ * when called inside of the rxi_handler function. */
+#define U2_GET_LOOP_DEBUG(x) char *p = &x; \
+	while(*UART2_URXCON != 0) { \
+		*p = *UART2_UDATA; \
+		U2_DBG_RX_DATA(*p); p++; }
+
+#define U2_TXI_POLL_PROCESS(x) void uart2_txi_handler(void){ process_poll(x); }
+#define U2_RXI_POLL_PROCESS(x) void uart2_rxi_handler(void){ process_poll(x); }
 
 #endif

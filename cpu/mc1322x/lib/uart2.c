@@ -51,22 +51,22 @@ void uart2_isr(void) {
 	/* if (!bit_is_set(*UART2_UCON, TX_READY_MASK)) { */
 	/* if (!bit_is_set(*UART2_UCON, RX_READY_MASK)) { */
 
-/* if( uart2_txi_check() && uart2_rxi_check() ) {
+/* if( uart2_txi_check() && uart2_rxi_check() ) { printf("B"); */
 
-     printf("B");
-
-	} else if (uart2_txi_check()) {
+	if (uart2_txi_check()) {
 
 	  if (uart2_txi_handler != 0) { uart2_txi_handler(); }
 	  else { uart2_isr_fallback(); }
 
+	}
 
-	} else */ if (uart2_rxi_check()) {
+	if (uart2_rxi_check()) {
 
 	  if (uart2_rxi_handler != 0) { uart2_rxi_handler(); }
 	  else { uart2_isr_fallback(); }
 	}
 
+	return;
 }
 
 void uart2_isr_fallback(void) {

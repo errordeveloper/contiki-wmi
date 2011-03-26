@@ -45,47 +45,14 @@
 
 #include <stdio.h> /* For printf() on UART1 */
 
-#if 0
-void input_dump()
-{
-  // while(1) uart1_putc(uart2_getc());
-
-  while(1) { midi_uart_init();
-	  printf("%d ", uart2_getc()); }
-
-}
-#endif
-
 char urxbuf[32], utxbuf[32], status;
 
-#define U2_GET_LOOP_BEGIN(x) while(*UART2_URXCON != 0) \
-				{ *x = *UART2_UDATA; x++; }
-				/* flush_packet(x); */
-
-/* This can be done a bit better with switch() */
-#define U2_DBG_RX_DATA(x) status = *UART2_USTAT; \
-		  printf(":%i (Err: ", x); \
-		  if(status == 0x80) { printf("N"); } else { \
-	  if(bit_is_set(status, START_BIT_ERROR))	{ printf("F"); } \
-	  if(bit_is_set(status, STOP_BIT_ERROR))	{ printf("S"); } \
-	  if(bit_is_set(status, PARITY_ERROR))	{ printf("P"); } \
-	  if(bit_is_set(status, RX_FIFO_OVERRUN))	{ printf("O"); } \
-	  if(bit_is_set(status, RX_FIFO_UNDERRUN))	{ printf("U"); } \
-		  } printf(" =%x)\n", status)
+char uart_init_done = 0;
 
 /*---------------------------------------------------------------------------*/
-void 
-uart2_rxi_handler(void){
-
-/* Test it here and now! */
-
-U2_GET_LOOP(x);
-
-// U2_DBG_RX_DATA(x);
-
-
-}
-
+PROCESS(uart2_test, "Testing UART2 in MIDI mode");
+AUTOSTART_PROCESSES(&uart2_test);
+U2_RXI_POLL_PROCESS(&uart2_test);
 /*---------------------------------------------------------------------------*/
 void 
 uart2_txi_handler(void){
@@ -94,7 +61,7 @@ uart2_txi_handler(void){
 
     printf("t");
 
-    *UART2_UDATA = 0x85;
+    //*UART2_UDATA = 0x85;
 
 #endif
   
@@ -102,18 +69,35 @@ uart2_txi_handler(void){
 
 
 /*---------------------------------------------------------------------------*/
-
-/*---------------------------------------------------------------------------*/
-PROCESS(uart2_test, "Testing UART2 in MIDI mode");
-AUTOSTART_PROCESSES(&uart2_test);
-/*---------------------------------------------------------------------------*/
 PROCESS_THREAD(uart2_test, ev, data)
 {
   PROCESS_BEGIN();
 
-  midi_uart_init();
+#ifndef APPCONF_REDUNDUNT_CHECK
+  if(!uart_init_done){
+    midi_uart_init();
+    uart_init_done=1;
+  } for( ; ; ) {
+#else
+  for( midi_uart_init(); ; ) {
+#endif
 
-  // input_dump();
+
+    #if 1
+
+    /* To see proper value of
+     * USTAT this should run
+     * in the interrupt context.
+     */
+    U2_GET_LOOP_DEBUG(urxbuf);
+
+    #else
+
+    U2_GET_LOOP(urxbuf);
+
+    #endif
+
+  }
 
   PROCESS_END();
 }

@@ -134,3 +134,8 @@ TOOLS = $(CONTIKIMC1322X)/tools/
 	perl $(TOOLS)/mc1322x-load.pl -t $(UDEV_UART) \
 		-f $<
 
+%.load-reset-print: %_$(TARGET).bin
+	perl $(TOOLS)/mc1322x-load.pl -t $(UDEV_UART) \
+		-f $< \
+		-c 'bbmc -l $(TARGET) reset'
+
