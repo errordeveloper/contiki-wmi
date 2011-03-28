@@ -193,7 +193,9 @@ enum {
 #  warning "U2_RXFIFO_SIZE is not default"
 #endif
 
+/** Circular buffer */
 extern volatile uint32_t  u1_head, u1_tail;
+
 void uart1_putc(char c);
 #define uart1_can_get() (*UART1_URXCON > 0)
 uint8_t uart1_getc(void);
@@ -203,7 +205,9 @@ uint8_t uart1_getc(void);
 extern void uart1_txi_handler(void)  __attribute__((weak));
 extern void uart1_rxi_handler(void)  __attribute__((weak));
 
+/** Circular buffer (fallback only) */
 extern volatile uint32_t  u2_head, u2_tail;
+
 void uart2_putc(char c);
 #define uart2_can_get() (*UART2_URXCON > 0)
 uint8_t uart2_getc(void);
@@ -226,15 +230,17 @@ extern void uart2_rxi_handler(void)  __attribute__((weak));
 		  } printf(" =%x)\n", status)
 
 
-#define U2_GET_LOOP(x) char *p = &x; \
-	while(*UART2_URXCON != 0) { *(p++) = *UART2_UDATA; }
+/* Perhaps __BASE_FILE__ could be used for uniq name,
+ * but this should be sufficient. */
+#define U2_GET_LOOP(x) char *_##x = &x; \
+	while(*UART2_URXCON != 0) { *(_##x++) = *UART2_UDATA; }
 
 /* Note that it will only print proper values of USTAT
  * when called inside of the rxi_handler function. */
-#define U2_GET_LOOP_DEBUG(x) char *p = &x; \
+#define U2_GET_LOOP_DEBUG(x) char *_##x = &x; \
 	while(*UART2_URXCON != 0) { \
-		*p = *UART2_UDATA; \
-		U2_DBG_RX_DATA(*p); p++; }
+		*_##x = *UART2_UDATA; \
+		U2_DBG_RX_DATA(*_##x); _##x++; }
 
 #define U2_TXI_POLL_PROCESS(x) void uart2_txi_handler(void){ process_poll(x); }
 #define U2_RXI_POLL_PROCESS(x) void uart2_rxi_handler(void){ process_poll(x); }
