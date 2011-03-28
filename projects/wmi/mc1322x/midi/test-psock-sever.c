@@ -66,8 +66,8 @@ PT_THREAD(handle_connection(struct psock *p))
   PSOCK_BEGIN(p);
 
 
-  printf("connection handler is sending 32 bytes");
-    PSOCK_SEND(p, urxbuf, 32);
+  //printf("connection handler is sending 32 bytes");
+    //PSOCK_SEND(p, urxbuf, 32);
 
 
   /*
@@ -86,7 +86,7 @@ PT_THREAD(handle_connection(struct psock *p))
    * 10 bytes received. The rest of the line up to the newline simply
    * is discarded.
    */
-  // PSOCK_READTO(p, '\n');
+   PSOCK_READTO(p, '\n');
   
   /*
    * And we send back the contents of the buffer. The PSOCK_DATALEN()
@@ -117,6 +117,15 @@ PROCESS(uart2_rx_midi, "UART2 RX handler");
 AUTOSTART_PROCESSES(&psock_server, &uart2_rx_midi);
 //AUTOSTART_PROCESSES(&psock_server);
 U2_RXI_POLL_PROCESS(&uart2_rx_midi);
+
+#if 0
+void
+uart2_rxi_debug_handler(void){
+	printf("\n%x:%x", *UART2_USTAT, *UART2_URXCON);
+	while(*UART2_URXCON != 0) urxbuf[0]=*UART2_UDATA;
+	printf("\n%x:%x", *UART2_USTAT, *UART2_URXCON);
+}
+#endif
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(uart2_rx_midi, ev, data)
 {
@@ -124,9 +133,10 @@ PROCESS_THREAD(uart2_rx_midi, ev, data)
 
   for( midi_uart_init(); ; ) {
 
-    //printf("r");
-
     U2_GET_LOOP_DEBUG(urxbuf); 
+
+    process_poll(&psock_server);
+    PROCESS_YIELD();
 
   }
 
@@ -194,7 +204,6 @@ PROCESS_THREAD(psock_server, ev, data)
 	 * protothread uses the protosocket to receive the data that
 	 * we want it to.
 	 */
-	printf("calling connection hadnler ...");
 	handle_connection(&ps);
       }
     }

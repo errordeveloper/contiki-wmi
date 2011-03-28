@@ -56,6 +56,15 @@ PROCESS(uart2_test, "Testing UART2 in MIDI mode");
 AUTOSTART_PROCESSES(&uart2_test);
 U2_RXI_POLL_PROCESS(&uart2_test);
 /*---------------------------------------------------------------------------*/
+
+void
+uart2_rxi_handler(void){
+	printf("\n%x:%x", *UART2_USTAT, *UART2_URXCON);
+	while(*UART2_URXCON != 0) urxbuf[0]=*UART2_UDATA;
+	printf("\n%x:%x", *UART2_USTAT, *UART2_URXCON);
+}
+
+
 void 
 uart2_txi_handler(void){
 

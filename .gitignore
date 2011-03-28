@@ -18,10 +18,10 @@ symbols.[ch]
 #examples/*/symbols.c
 #examples/*/symbols.h
 
+*.avr*
 *.arduino
 *.native
-
-#*.avr*
+*.minimal-net
 
 tests/obj_*
 obj_*
