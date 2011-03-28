@@ -17,6 +17,8 @@
 
 #include <string.h>
 
+#include <stdio.h> /* For printf() on UART1 */
+
 #include "uart2-midi.h"
 
 #define MIDI_DATA_SIZE 0 // 1024
@@ -41,7 +43,9 @@ static struct psock ps;
  */
 static char buffer[10];
 
-/*---------------------------------------------------------------------------*/
+char urxbuf[32], utxbuf[32], status;
+
+
 /*
  * A protosocket always requires a protothread. The protothread
  * contains the code that uses the protosocket. We define the
@@ -61,51 +65,17 @@ PT_THREAD(handle_connection(struct psock *p))
    */
   PSOCK_BEGIN(p);
 
-#if MIDI_DATA_SIZE
 
-  int k; char x[MIDI_DATA_SIZE];
+  printf("connection handler is sending 32 bytes");
+    PSOCK_SEND(p, urxbuf, 32);
 
-  while(1) {
-
-    for( k = MIDI_DATA_SIZE; k > 0; k-- ) {
-      x[k] = midi_uart_getc();
-    }
-
-    PSOCK_SEND(p, x, MIDI_DATA_SIZE);
-
-  }
-
-#else
-
-  /*
-   * This works.
-   *
-   * Pipeline: `nc econtag1 1010 | mnc -p 21928 225.0.0.37`
-   * and then `multimidicast` anywhere on the LAN pick-up
-   * the multicast stream. However ALSA client do not get
-   * proper MIDI data - the order and latency of events
-   * are very poor. A better approch is needed.
-   *
-  */
-
-  char x;
-
-  while(1) {
-
-    x = midi_uart_getc();
-
-    PSOCK_SEND(p, x, 1);
-
-  }
-
-#endif
 
   /*
    * We start by sending out a welcoming message. The message is sent
    * using the PSOCK_SEND_STR() function that sends a null-terminated
    * string.
    */
-  // PSOCK_SEND_STR(p, "Welcome, please type something and press return.\n");
+   PSOCK_SEND_STR(p, "Welcome, please type something and press return.\n");
   
   /*
    * Next, we use the PSOCK_READTO() function to read incoming data
@@ -142,20 +112,39 @@ PT_THREAD(handle_connection(struct psock *p))
 /*
  * We declare the process.
  */
-PROCESS(example_psock_server_process, "Test protosocket server");
-AUTOSTART_PROCESSES(&example_psock_server_process);
+PROCESS(psock_server, "TCP server");
+PROCESS(uart2_rx_midi, "UART2 RX handler");
+AUTOSTART_PROCESSES(&psock_server, &uart2_rx_midi);
+//AUTOSTART_PROCESSES(&psock_server);
+U2_RXI_POLL_PROCESS(&uart2_rx_midi);
+/*---------------------------------------------------------------------------*/
+PROCESS_THREAD(uart2_rx_midi, ev, data)
+{
+  PROCESS_BEGIN();
+
+  for( midi_uart_init(); ; ) {
+
+    //printf("r");
+
+    U2_GET_LOOP_DEBUG(urxbuf); 
+
+  }
+
+  PROCESS_END();
+
+}
 /*---------------------------------------------------------------------------*/
 /*
  * The definition of the process.
  */
-PROCESS_THREAD(example_psock_server_process, ev, data)
+PROCESS_THREAD(psock_server, ev, data)
 {
   /*
    * The process begins here.
    */
   PROCESS_BEGIN();
 
-  midi_uart_init();
+  //midi_uart_init();
 
   /*
    * We start with setting up a listening TCP port. Note how we're
@@ -205,6 +194,7 @@ PROCESS_THREAD(example_psock_server_process, ev, data)
 	 * protothread uses the protosocket to receive the data that
 	 * we want it to.
 	 */
+	printf("calling connection hadnler ...");
 	handle_connection(&ps);
       }
     }

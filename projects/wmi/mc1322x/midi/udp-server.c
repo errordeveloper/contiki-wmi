@@ -58,13 +58,13 @@ AUTOSTART_PROCESSES(&udp_server_process);
 static void
 tcpip_handler(void)
 {
-  // char *appdata;
+  char *appdata;
 
   PRINTF("Entered the tcpip_handler() here.\n");
 
   if(uip_newdata()) {
-    // appdata = (char *)uip_appdata;
-    // appdata[uip_datalen()] = 0;
+    appdata = (char *)uip_appdata;
+    appdata[uip_datalen()] = 0;
     PRINTF("DATA recv '%x' from ", uip_appdata);
     PRINTF("%d", UIP_IP_BUF->srcipaddr.u8[15]);
     PRINTF("\n");
@@ -155,23 +155,23 @@ PROCESS_THREAD(udp_server_process, ev, data)
   udp_bind(server_conn, UIP_HTONS(UDP_SERVER_PORT));
 
   PRINTF("Created a server connection with remote address ");
-  PRINT6ADDR(&server_conn->ripaddr);
-  PRINTF(" local/remote port %u/%u\n", UIP_HTONS(server_conn->lport),
-         UIP_HTONS(server_conn->rport));
+  	PRINT6ADDR(&server_conn->ripaddr);
 
-  char x1=1;
+  PRINTF(" local/remote port %u/%u\n",
+	UIP_HTONS(server_conn->lport),
+	UIP_HTONS(server_conn->rport));
 
   while(1) {
 
-    if (x1) { PRINTF("Entered while(1) here.\n"); x1=0; }
-
     PROCESS_YIELD();
+
     if(ev == tcpip_event) {
       tcpip_handler();
     } else if (ev == sensors_event && data == &button_sensor) {
       PRINTF("Initiaing global repair\n");
       rpl_repair_dag(rpl_get_dag(RPL_ANY_INSTANCE));
     }
+
   }
 
   PROCESS_END();

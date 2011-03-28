@@ -47,7 +47,9 @@
 
 char urxbuf[32], utxbuf[32], status;
 
+#ifdef APPCONF_REDUNDUNT_CHECK
 char uart_init_done = 0;
+#endif
 
 /*---------------------------------------------------------------------------*/
 PROCESS(uart2_test, "Testing UART2 in MIDI mode");
@@ -73,7 +75,7 @@ PROCESS_THREAD(uart2_test, ev, data)
 {
   PROCESS_BEGIN();
 
-#ifndef APPCONF_REDUNDUNT_CHECK
+#ifdef APPCONF_REDUNDUNT_CHECK
   if(!uart_init_done){
     midi_uart_init();
     uart_init_done=1;

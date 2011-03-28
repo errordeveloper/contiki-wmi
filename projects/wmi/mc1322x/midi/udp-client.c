@@ -28,7 +28,6 @@
  */
 
 #include <uart2-midi.h>
-#include <uart1.h>
 
 #include "contiki.h"
 #include "lib/random.h"
@@ -49,24 +48,17 @@
 #define DEBUG DEBUG_PRINT
 #include "net/uip-debug.h"
 
-#define START_INTERVAL		(5 * CLOCK_SECOND)
-#define SEND_INTERVAL		(4 * CLOCK_SECOND)
-#define SEND_TIME		(3 * CLOCK_SECOND)
-#define MAX_PAYLOAD_LEN		30
+#define MAX_PAYLOAD_LEN		32
 
 static struct uip_udp_conn *client_conn;
 static uip_ipaddr_t server_ipaddr;
 
+char urxbuf[32], utxbuf[32], status;
+
 /*---------------------------------------------------------------------------*/
 PROCESS(udp_client_process, "UDP client process");
 AUTOSTART_PROCESSES(&udp_client_process);
-/*---------------------------------------------------------------------------*/
-void 
-uart2_rxi_handler(void){
-
-// PRINTF("r");
-
-}
+U2_RXI_POLL_PROCESS(&udp_client_process);
 /*---------------------------------------------------------------------------*/
 void 
 uart2_txi_handler(void){
@@ -91,7 +83,7 @@ static void
 send_packet(void *ptr)
 {
   //static int seq_id;
-  char buf = midi_uart_getc();
+  //char buf = midi_uart_getc();
 
   /*
   seq_id++;
@@ -99,9 +91,9 @@ send_packet(void *ptr)
          client_conn->ripaddr.u8[15], seq_id);
   sprintf(buf, "Hello %d from the client", seq_id);
   */
-  PRINTF("Sending %x\n", buf);
+  PRINTF("Sending ...\n");
 
-  uip_udp_packet_sendto(client_conn, buf, 1,
+  uip_udp_packet_sendto(client_conn, urxbuf, 32,
                         &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
 }
 /*---------------------------------------------------------------------------*/
@@ -182,16 +174,22 @@ PROCESS_THREAD(udp_client_process, ev, data)
   PRINTF(" local/remote port %u/%u\n",
 	UIP_HTONS(client_conn->lport), UIP_HTONS(client_conn->rport));
 
-  midi_uart_init();
-
-  PRINTF("midi_uart_init() done.\n");
 
   // etimer_set(&periodic, SEND_INTERVAL);
-  while(1) {
+  for( midi_uart_init(); ; ) {
     PROCESS_YIELD();
+
+    U2_GET_LOOP_DEBUG(urxbuf);
+
+    PRINTF("Sending ...\n");
+
+    uip_udp_packet_sendto(client_conn, urxbuf, 32,
+			  &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
+
+    /*
     if(ev == tcpip_event) {
       tcpip_handler();
-    }
+    }*/
 
     /*
     if(etimer_expired(&periodic)) {
