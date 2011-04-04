@@ -235,6 +235,12 @@ extern void uart2_rxi_handler(void)  __attribute__((weak));
 #define U2_GET_LOOP(x) char *_##x = &x; \
 	while(*UART2_URXCON != 0) { *(_##x++) = *UART2_UDATA; }
 
+#define U2_GET_POST(x) char *_##x = &x; \
+	if(*UART2_URXCON != 0) { do \
+	{ *(_##x++) = *UART2_UDATA; } \
+	while(*UART2_URXCON != 0); \
+	process_post(PROCESS_BROADCAST, done_##x, 2); }
+
 /* Note that it will only print proper values of USTAT
  * when called inside of the rxi_handler function. */
 #define U2_GET_LOOP_DEBUG(x) char *_##x = &x; \

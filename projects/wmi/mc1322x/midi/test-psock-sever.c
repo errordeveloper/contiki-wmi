@@ -1,10 +1,6 @@
 /*
- * This is a small example of how to write a TCP server using
- * Contiki's protosockets. It is a simple server that accepts one line
- * of text from the TCP connection, and echoes back the first 10 bytes
- * of the string, and then closes the connection.
  *
- * The server only handles one connection at a time.
+ * The Talker only handles one connection at a time.
  *
  */
 
@@ -17,65 +13,62 @@
 
 #include <string.h>
 
-#include <stdio.h> /* For printf() on UART1 */
+#include <stdio.h>
 
 #include "uart2-midi.h"
 
-#define MIDI_DATA_SIZE 0 // 1024
 
-/*
- * We include "contiki-net.h" to get all network definitions and
- * declarations.
- */
 #include "contiki-net.h"
 
-/*
- * We define one protosocket since we've decided to only handle one
- * connection at a time. If we want to be able to handle more than one
- * connection at a time, each parallell connection needs its own
- * protosocket.
- */
-static struct psock ps;
+#define MIDI_DATA_SIZE 0 // 1024
+#define data_buffer_t char
 
 /*
- * We must have somewhere to put incoming data, and we use a 10 byte
- * buffer for this purpose.
+ * To be able to handle more than one connection at a time,
+ * each parallell connection needs its own protosocket.
  */
-static char buffer[10];
+static struct psock TCP_thread;
+static struct pt    URX_thread;
 
-char urxbuf[32], utxbuf[32], status;
+PROCESS(Talker, "MIDI Talker");
+AUTOSTART_PROCESSES(&Talker);
+U2_RXI_POLL_PROCESS(&Talker);
 
+/*---------------------------------------------------------------------------*/
 
-/*
- * A protosocket always requires a protothread. The protothread
- * contains the code that uses the protosocket. We define the
- * protothread here.
- */
+static data_buffer_t tcpbuf[10], urxbuf[32], utxbuf[32];
+char status;
+
+static process_event_t urxbuf_full;
+
+/*---------------------------------------------------------------------------*/
 static
-PT_THREAD(handle_connection(struct psock *p))
+PT_THREAD(URX_fill(struct pt *u, process_event_t ev, data_buffer_t *buf))
 {
-  /*
-   * A protosocket's protothread must start with a PSOCK_BEGIN(), with
-   * the protosocket as argument.
-   *
-   * Remember that the same rules as for protothreads apply: do NOT
-   * use local variables unless you are very sure what you are doing!
-   * Local (stack) variables are not preserved when the protothread
-   * blocks.
-   */
+
+  PT_BEGIN(u);
+
+  U2_GET_LOOP_DEBUG(urxbuf);
+
+  process_post(PROCESS_BROADCAST, urxbuf_full, 2);
+
+  PT_END(u);
+
+}
+
+/*---------------------------------------------------------------------------*/
+static
+PT_THREAD(TCP_send(struct psock *p, process_event_t ev, data_buffer_t *buf))
+{
   PSOCK_BEGIN(p);
 
+  while(1) { PSOCK_WAIT_UNTIL(p, ev == urxbuf_full);
 
-  //printf("connection handler is sending 32 bytes");
     //PSOCK_SEND(p, urxbuf, 32);
 
+    PSOCK_SEND_STR(p, "UART2 data is ready.\n");
 
-  /*
-   * We start by sending out a welcoming message. The message is sent
-   * using the PSOCK_SEND_STR() function that sends a null-terminated
-   * string.
-   */
-   PSOCK_SEND_STR(p, "Welcome, please type something and press return.\n");
+  }
   
   /*
    * Next, we use the PSOCK_READTO() function to read incoming data
@@ -86,7 +79,7 @@ PT_THREAD(handle_connection(struct psock *p))
    * 10 bytes received. The rest of the line up to the newline simply
    * is discarded.
    */
-   PSOCK_READTO(p, '\n');
+  // PSOCK_READTO(p, '\n');
   
   /*
    * And we send back the contents of the buffer. The PSOCK_DATALEN()
@@ -95,123 +88,46 @@ PT_THREAD(handle_connection(struct psock *p))
    * buffer we're using.
    */
   // PSOCK_SEND_STR(p, "Got the following data: ");
-  // PSOCK_SEND(p, buffer, PSOCK_DATALEN(p));
+  // PSOCK_SEND(p, tcpbuf, PSOCK_DATALEN(p));
   // PSOCK_SEND_STR(p, "Good bye!\r\n");
 
-  /*
-   * We close the protosocket.
-   */
   PSOCK_CLOSE(p);
 
-  /*
-   * And end the protosocket's protothread.
-   */
   PSOCK_END(p);
 }
-/*---------------------------------------------------------------------------*/
-/*
- * We declare the process.
- */
-PROCESS(psock_server, "TCP server");
-PROCESS(uart2_rx_midi, "UART2 RX handler");
-AUTOSTART_PROCESSES(&psock_server, &uart2_rx_midi);
-//AUTOSTART_PROCESSES(&psock_server);
-U2_RXI_POLL_PROCESS(&uart2_rx_midi);
 
-#if 0
-void
-uart2_rxi_debug_handler(void){
-	printf("\n%x:%x", *UART2_USTAT, *UART2_URXCON);
-	while(*UART2_URXCON != 0) urxbuf[0]=*UART2_UDATA;
-	printf("\n%x:%x", *UART2_USTAT, *UART2_URXCON);
-}
-#endif
+
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(uart2_rx_midi, ev, data)
+PROCESS_THREAD(Talker, ev, data)
 {
+  PROCESS_POLLHANDLER(URX_fill(&URX_thread, ev, &urxbuf));
   PROCESS_BEGIN();
 
-  for( midi_uart_init(); ; ) {
+  midi_uart_init();
 
-    U2_GET_LOOP_DEBUG(urxbuf); 
+  urxbuf_full = process_alloc_event();
 
-    process_poll(&psock_server);
-    PROCESS_YIELD();
+  PT_INIT(&URX_thread);
 
-  }
-
-  PROCESS_END();
-
-}
-/*---------------------------------------------------------------------------*/
-/*
- * The definition of the process.
- */
-PROCESS_THREAD(psock_server, ev, data)
-{
-  /*
-   * The process begins here.
-   */
-  PROCESS_BEGIN();
-
-  //midi_uart_init();
-
-  /*
-   * We start with setting up a listening TCP port. Note how we're
-   * using the UIP_HTONS() macro to convert the port number (1010) to
-   * network byte order as required by the tcp_listen() function.
-   */
   tcp_listen(UIP_HTONS(1010));
 
-  /*
-   * We loop for ever, accepting new connections.
-   */
   while(1) {
 
-    /*
-     * We wait until we get the first TCP/IP event, which probably
-     * comes because someone connected to us.
-     */
     PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
 
-    /*
-     * If a peer connected with us, we'll initialize the protosocket
-     * with PSOCK_INIT().
-     */
     if(uip_connected()) {
       
-      /*
-       * The PSOCK_INIT() function initializes the protosocket and
-       * binds the input buffer to the protosocket.
-       */
-      PSOCK_INIT(&ps, buffer, sizeof(buffer));
+      PSOCK_INIT(&TCP_thread, tcpbuf, sizeof(tcpbuf));
 
-      /*
-       * We loop until the connection is aborted, closed, or times out.
-       */
       while(!(uip_aborted() || uip_closed() || uip_timedout())) {
 
-	/*
-	 * We wait until we get a TCP/IP event. Remember that we
-	 * always need to wait for events inside a process, to let
-	 * other processes run while we are waiting.
-	 */
 	PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
 
-	/*
-	 * Here is where the real work is taking place: we call the
-	 * handle_connection() protothread that we defined above. This
-	 * protothread uses the protosocket to receive the data that
-	 * we want it to.
-	 */
-	handle_connection(&ps);
+	TCP_send(&TCP_thread, ev, urxbuf);
       }
     }
   }
   
-  /*
-   * We must always declare the end of a process.
-   */
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/

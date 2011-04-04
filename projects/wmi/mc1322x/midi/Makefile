@@ -11,7 +11,13 @@ PROJECT_SOURCEFILES += uart2.c #$(MIDI_LIB_SOURCEFILES) # uart2-midi.c
 
 all: $(CONTIKI_PROJECT)
 
+
 UIP_CONF_IPV6=1
 
 CONTIKI = ../../../../
 include $(CONTIKI)/Makefile.include
+
+router-f1:
+	cd $(CONTIKI)/examples/ipv6/rpl-border-router/ \
+	&& make TARGET=freescale-1322xusb border-router.load \
+	&& make TARGET=freescale-1322xusb connect-router-xterm
