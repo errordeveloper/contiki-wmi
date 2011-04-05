@@ -232,20 +232,20 @@ extern void uart2_rxi_handler(void)  __attribute__((weak));
 
 /* Perhaps __BASE_FILE__ could be used for uniq name,
  * but this should be sufficient. */
-#define U2_GET_LOOP(x) char *_##x = &x; \
+#define U2_GET_LOOP(x) static char *_##x = &x; \
 	while(*UART2_URXCON != 0) { *(_##x++) = *UART2_UDATA; }
 
-#define U2_GET_POST(x) char *_##x = &x; \
-	if(*UART2_URXCON != 0) { do \
-	{ *(_##x++) = *UART2_UDATA; } \
-	while(*UART2_URXCON != 0); \
+#define U2_GET_POST(x) static char *_##x = &x;	\
+	if(*UART2_URXCON != 0) { do		\
+	{ *(_##x++) = *UART2_UDATA; }		\
+	while(*UART2_URXCON != 0);		\
 	process_post(PROCESS_BROADCAST, done_##x, 2); }
 
 /* Note that it will only print proper values of USTAT
  * when called inside of the rxi_handler function. */
-#define U2_GET_LOOP_DEBUG(x) char *_##x = &x; \
-	while(*UART2_URXCON != 0) { \
-		*_##x = *UART2_UDATA; \
+#define U2_GET_LOOP_DEBUG(x) static char *_##x = &x;	\
+	while(*UART2_URXCON != 0) {			\
+		*_##x = *UART2_UDATA;			\
 		U2_DBG_RX_DATA(*_##x); _##x++; }
 
 #define U2_TXI_POLL_PROCESS(x) void uart2_txi_handler(void){ process_poll(x); }

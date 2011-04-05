@@ -23,6 +23,7 @@
 #define MIDI_DATA_SIZE 0 // 1024
 #define data_buffer_t char
 
+#define P() printf("line: %d\n", __LINE__)
 /*
  * To be able to handle more than one connection at a time,
  * each parallell connection needs its own protosocket.
@@ -48,13 +49,19 @@ PT_THREAD(URX_fill(struct pt *u, process_event_t ev, data_buffer_t *buf))
 
   PT_BEGIN(u);
 
-  U2_GET_LOOP_DEBUG(urxbuf);
+  while(1) { P(); PT_YIELD_UNTIL(u, ev == PROCESS_EVENT_POLL);
 
-  process_post(PROCESS_BROADCAST, urxbuf_full, 2);
+    U2_GET_LOOP(urxbuf);
+
+    process_post(PROCESS_BROADCAST, urxbuf_full, 2);
+
+  }
 
   PT_END(u);
 
 }
+
+//static void URX_fill(void) { U2_GET_LOOP_DEBUG(urxbuf); return; }
 
 /*---------------------------------------------------------------------------*/
 static
@@ -62,7 +69,7 @@ PT_THREAD(TCP_send(struct psock *p, process_event_t ev, data_buffer_t *buf))
 {
   PSOCK_BEGIN(p);
 
-  while(1) { PSOCK_WAIT_UNTIL(p, ev == urxbuf_full);
+   while(1) { P(); PSOCK_WAIT_UNTIL(p, ev == urxbuf_full);
 
     //PSOCK_SEND(p, urxbuf, 32);
 
@@ -100,33 +107,44 @@ PT_THREAD(TCP_send(struct psock *p, process_event_t ev, data_buffer_t *buf))
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(Talker, ev, data)
 {
-  PROCESS_POLLHANDLER(URX_fill(&URX_thread, ev, &urxbuf));
+  //PROCESS_POLLHANDLER(URX_fill());
+  //PROCESS_POLLHANDLER(URX_fill(&URX_thread, ev, &urxbuf));
   PROCESS_BEGIN();
 
-  midi_uart_init();
+  midi_uart_init(); P();
 
   urxbuf_full = process_alloc_event();
 
-  PT_INIT(&URX_thread);
+  //PT_INIT(&URX_thread);
 
   tcp_listen(UIP_HTONS(1010));
 
   while(1) {
 
-    PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
+    PROCESS_WAIT_EVENT();
+    
+    if(ev ==  PROCESS_EVENT_POLL) {
 
-    if(uip_connected()) {
-      
-      PSOCK_INIT(&TCP_thread, tcpbuf, sizeof(tcpbuf));
+      //printf("POLLED\n");
+      URX_fill(&URX_thread, ev, &urxbuf);
 
-      while(!(uip_aborted() || uip_closed() || uip_timedout())) {
+      //while(*UART2_URXCON != 0); { urxbuf[0] = *UART2_UDATA; }
 
-	PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
-
-	TCP_send(&TCP_thread, ev, urxbuf);
+    } else if(ev == tcpip_event) {
+     
+      if(uip_connected()) {
+        
+        PSOCK_INIT(&TCP_thread, tcpbuf, sizeof(tcpbuf));
+     
+        while(!(uip_aborted() || uip_closed() || uip_timedout())) {
+     
+          PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event || ev == urxbuf_full);
+     
+          TCP_send(&TCP_thread, ev, urxbuf);
+        }
       }
     }
-  }
+  }  
   
   PROCESS_END();
 }
