@@ -49,11 +49,13 @@ PT_THREAD(URX_fill(struct pt *u, process_event_t ev, data_buffer_t *buf))
 
   PT_BEGIN(u);
 
-  while(1) { P(); PT_YIELD_UNTIL(u, ev == PROCESS_EVENT_POLL);
+  while(1) { //P(); //PT_YIELD_UNTIL(u, ev == PROCESS_EVENT_POLL);
 
-    U2_GET_LOOP(urxbuf);
+    U2_GET_LOOP_DEBUG(urxbuf);
 
     process_post(PROCESS_BROADCAST, urxbuf_full, 2);
+
+    PT_YIELD(u);
 
   }
 
@@ -73,7 +75,7 @@ PT_THREAD(TCP_send(struct psock *p, process_event_t ev, data_buffer_t *buf))
 
     //PSOCK_SEND(p, urxbuf, 32);
 
-    PSOCK_SEND_STR(p, "UART2 data is ready.\n");
+    P(); PSOCK_SEND_STR(p, "UART2 data is ready.\n");
 
   }
   
@@ -121,12 +123,12 @@ PROCESS_THREAD(Talker, ev, data)
 
   while(1) {
 
-    PROCESS_WAIT_EVENT();
+    PROCESS_WAIT_EVENT(); P();
     
     if(ev ==  PROCESS_EVENT_POLL) {
 
       //printf("POLLED\n");
-      URX_fill(&URX_thread, ev, &urxbuf);
+      P(); URX_fill(&URX_thread, ev, &urxbuf);
 
       //while(*UART2_URXCON != 0); { urxbuf[0] = *UART2_UDATA; }
 
@@ -134,11 +136,11 @@ PROCESS_THREAD(Talker, ev, data)
      
       if(uip_connected()) {
         
-        PSOCK_INIT(&TCP_thread, tcpbuf, sizeof(tcpbuf));
+        P(); PSOCK_INIT(&TCP_thread, tcpbuf, sizeof(tcpbuf));
      
         while(!(uip_aborted() || uip_closed() || uip_timedout())) {
      
-          PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event || ev == urxbuf_full);
+          PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event); // || ev == urxbuf_full);
      
           TCP_send(&TCP_thread, ev, urxbuf);
         }

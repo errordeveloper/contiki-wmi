@@ -139,3 +139,35 @@ TOOLS = $(CONTIKIMC1322X)/tools/
 		-f $< \
 		-c 'bbmc -l $(TARGET) reset'
 
+ocd:
+	openocd -f board/$(TARGET).cfg $(OCD_ARGS)
+
+# for some reason it won't work in background
+# even if logging to a file, so will use screen
+# it might need a custom scrrenrc file ...
+# wthough it could be created dynamically :)
+
+OCD_SCREENRC = /tmp/$(OCD_SESSION).screenrc
+OCD_SLEEPSEC = 1.5
+OCD_COMMAND = `which openocd`
+OCD_SESSION = ocd:$(TARGET)
+OCD_CONNECT = bash -c \"echo Sleeping for $(OCD_SLEEPSEC) seconds...; \
+	      sleep $(OCD_SLEEPSEC) && telnet localhost 4444\"
+
+#/tmp/$(OCD_SESESSION).rc:
+ocd-screenrc:
+	echo -n > $(OCD_SCREENRC)
+	echo "startup_message off"			>> $(OCD_SCREENRC)
+	echo "deflogin off"				>> $(OCD_SCREENRC)
+	echo "screen -t ocd-log  $(OCD_COMMAND) \
+		-f board/$(TARGET).cfg $(OCD_ARGS)"	>> $(OCD_SCREENRC)
+	echo "screen -t ocd-cli  $(OCD_CONNECT)"	>> $(OCD_SCREENRC)
+
+ocd-screen: ocd-screenrc
+	screen -c $(OCD_SCREENRC) -S $(OCD_SESSION) -t $(OCD_SESSION) 
+
+ocd-hide: ocd-screenrc
+	screen -c $(OCD_SCREENRC) -dm -S $(OCD_SESSION) -t $(OCD_SESSION)
+
+ocd-show:
+	screen -xd $(OCD_SESSION)
