@@ -191,5 +191,3 @@ ocd-show:
 #			suppose it's ok if these are not set, so
 #			we will have empty lines in screenrc file
 #	XTERM_WINTITLE: i.e. 'Contiki RPL boarder router console'
-#
-#IDEA: UDEV_UART should be set somehow by platform aliases
