@@ -49,9 +49,20 @@ PT_THREAD(URX_fill(struct pt *u, process_event_t ev, data_buffer_t *buf))
 
   PT_BEGIN(u);
 
+  static data_buffer_t *_urxbuf = &urxbuf;
+
   while(1) { //P(); //PT_YIELD_UNTIL(u, ev == PROCESS_EVENT_POLL);
 
-    U2_GET_LOOP_DEBUG(urxbuf);
+    //U2_GET_LOOP_DEBUG(urxbuf);
+
+    printf("\n urxbuf_full = %x\n", urxbuf_full);
+    while(*UART2_URXCON != 0) {
+
+	    *_urxbuf = *UART2_UDATA;
+	    U2_DBG_RX_DATA(*_urxbuf);
+	    _urxbuf++;
+
+    }
 
     process_post(PROCESS_BROADCAST, urxbuf_full, 2);
 
@@ -67,17 +78,20 @@ PT_THREAD(URX_fill(struct pt *u, process_event_t ev, data_buffer_t *buf))
 
 /*---------------------------------------------------------------------------*/
 static
-PT_THREAD(TCP_send(struct psock *p, process_event_t ev, data_buffer_t *buf))
+PT_THREAD(TCP_send(struct psock *p, process_event_t *ev, data_buffer_t *buf))
 {
   PSOCK_BEGIN(p);
 
-   while(1) { P(); PSOCK_WAIT_UNTIL(p, ev == urxbuf_full);
+  //while(1) {
+  //PSOCK_WAIT_UNTIL(p, *ev == urxbuf_full);
 
+    //printf("\n urxbuf_full = %x\n", urxbuf_full);
+    //printf("\n socket got event %x\n", *ev);
     //PSOCK_SEND(p, urxbuf, 32);
 
-    P(); PSOCK_SEND_STR(p, "UART2 data is ready.\n");
+    PSOCK_SEND_STR(p, "UART2 data is ready.\n");
 
-  }
+  //}
   
   /*
    * Next, we use the PSOCK_READTO() function to read incoming data
@@ -88,7 +102,7 @@ PT_THREAD(TCP_send(struct psock *p, process_event_t ev, data_buffer_t *buf))
    * 10 bytes received. The rest of the line up to the newline simply
    * is discarded.
    */
-  // PSOCK_READTO(p, '\n');
+   //PSOCK_READTO(p, '\n');
   
   /*
    * And we send back the contents of the buffer. The PSOCK_DATALEN()
@@ -96,9 +110,9 @@ PT_THREAD(TCP_send(struct psock *p, process_event_t ev, data_buffer_t *buf))
    * received. Note that this length will not be longer than the input
    * buffer we're using.
    */
-  // PSOCK_SEND_STR(p, "Got the following data: ");
-  // PSOCK_SEND(p, tcpbuf, PSOCK_DATALEN(p));
-  // PSOCK_SEND_STR(p, "Good bye!\r\n");
+   //PSOCK_SEND_STR(p, "Got the following data: ");
+   //PSOCK_SEND(p, tcpbuf, PSOCK_DATALEN(p));
+   PSOCK_SEND_STR(p, "Good bye!\r\n");
 
   PSOCK_CLOSE(p);
 
@@ -124,6 +138,7 @@ PROCESS_THREAD(Talker, ev, data)
   while(1) {
 
     PROCESS_WAIT_EVENT(); P();
+    printf("\n main got ev=%x\n", ev);
     
     if(ev ==  PROCESS_EVENT_POLL) {
 
@@ -132,17 +147,18 @@ PROCESS_THREAD(Talker, ev, data)
 
       //while(*UART2_URXCON != 0); { urxbuf[0] = *UART2_UDATA; }
 
-    } else if(ev == tcpip_event) {
+    }
+
+    if(ev == tcpip_event) {
      
       if(uip_connected()) {
         
-        P(); PSOCK_INIT(&TCP_thread, tcpbuf, sizeof(tcpbuf));
+        PSOCK_INIT(&TCP_thread, tcpbuf, sizeof(tcpbuf));
      
         while(!(uip_aborted() || uip_closed() || uip_timedout())) {
      
           PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event); // || ev == urxbuf_full);
-     
-          TCP_send(&TCP_thread, ev, urxbuf);
+	  TCP_send(&TCP_thread, &ev, &urxbuf);
         }
       }
     }

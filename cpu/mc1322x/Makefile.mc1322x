@@ -149,7 +149,11 @@ ocd:
 
 OCD_SCREENRC = /tmp/$(OCD_SESSION).screenrc
 OCD_SLEEPSEC = 1.5
-OCD_COMMAND = `which openocd`
+ifdef $(OCD_DISTCFG)
+	OCD_COMMAND = `which openocd` -f board/$(TARGET).cfg $(OCD_ARGS)
+else
+	OCD_COMMAND = `which openocd` -f $(CONTIKIMC1322X)/openocd.cfg
+endif
 OCD_SESSION = ocd:$(TARGET)
 OCD_CONNECT = bash -c \"echo Sleeping for $(OCD_SLEEPSEC) seconds...; \
 	      sleep $(OCD_SLEEPSEC) && telnet localhost 4444\"
@@ -159,8 +163,7 @@ ocd-screenrc:
 	echo -n > $(OCD_SCREENRC)
 	echo "startup_message off"			>> $(OCD_SCREENRC)
 	echo "deflogin off"				>> $(OCD_SCREENRC)
-	echo "screen -t ocd-log  $(OCD_COMMAND) \
-		-f board/$(TARGET).cfg $(OCD_ARGS)"	>> $(OCD_SCREENRC)
+	echo "screen -t ocd-log  $(OCD_COMMAND)"	>> $(OCD_SCREENRC)
 	echo "screen -t ocd-cli  $(OCD_CONNECT)"	>> $(OCD_SCREENRC)
 
 ocd-screen: ocd-screenrc
