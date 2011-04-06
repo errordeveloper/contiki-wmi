@@ -171,3 +171,25 @@ ocd-hide: ocd-screenrc
 
 ocd-show:
 	screen -xd $(OCD_SESSION)
+
+#TODO: add ocd-xscreen here!
+# options are:
+# 	creat hidden screen
+# 	create screen in current terminal
+# 	create screen in new terminal
+# 	show screen in current terminal
+# 	show screen in new terminal
+#
+#NOTE: perhaps it can be used for mc1322x loader and other things!
+#	there should be a Makefile.tools with all such things
+#	that would rely on a bunch of variables such as:
+#
+#	SCREEN_SESSION: i.e. 'rpl-border-route' or 'ocd:$(TARGET)'
+#	SCRENN_RC_FILE: path to file, '/tmp/$@:$(SCREEN_SESSION)'
+#	SCREEN_COMMAND:	i.e. 'sudo tunslip6' or 'openocd'
+#	SCREEN_WINDOWx: x={1,2,3,4,5,6,7,8,9}
+#			suppose it's ok if these are not set, so
+#			we will have empty lines in screenrc file
+#	XTERM_WINTITLE: i.e. 'Contiki RPL boarder router console'
+#
+#IDEA: UDEV_UART should be set somehow by platform aliases

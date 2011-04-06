@@ -45,5 +45,9 @@ connect-router-xterm:	$(CONTIKI)/tools/tunslip6
 		$(CONTIKI)/tools/tunslip6 -L \
 		-s `readlink -e $(UDEV_UART)` aaaa::1/64
 
+#TODO: add connect-router-xscreen here!
+#	see TODO in Makefile.mc1322x :)
+#	we will need Makefile.utils
+
 connect-router-cooja:	$(CONTIKI)/tools/tunslip6
 	sudo $(P) $(CONTIKI)/tools/tunslip6 $(ARG_UART) -a localhost aaaa::1/64

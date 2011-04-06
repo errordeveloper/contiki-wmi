@@ -3,8 +3,15 @@
 ## Well, these are still quite long, but
 ## copletition can be used with ease.
 
-## make.[]	make TARGET=[]
+## The idea is that the names with number
+## at the end are refered to specific devices
+## and do have a specific UDEV_UART, whlie
+## the names without number are general.
+
+## make.[]	make TARGET=[]		UDEV_UART=/dev/serial/by-id/
 freescale-usb	freescale-1322xusb
+f1		freescale-1322xusb	/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50046Ij-if00-port0
 econotag	redbee-econotag
+e1		redbee-econotag		/dev/serial/by-id/usb-FTDI_Dual_RS232-HS-if01-port0
 
 cooja		cooja
