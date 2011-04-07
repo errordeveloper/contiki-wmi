@@ -36,6 +36,9 @@ AR       = $(CROSS)ar
 NM       = $(CROSS)nm
 OBJCOPY  = $(CROSS)objcopy
 STRIP    = $(CROSS)strip
+GDB	 = $(CROSS)gdb
+
+GDB_COMMAND ?= cgdb -d $(GDB)
 
 PROJECT_OBJECTFILES += ${addprefix $(OBJECTDIR)/,$(CONTIKI_TARGET_MAIN:.c=.o)}
 
@@ -139,6 +142,7 @@ TOOLS = $(CONTIKIMC1322X)/tools/
 		-f $< \
 		-c 'bbmc -l $(TARGET) reset'
 
+
 ocd:
 	openocd -f board/$(TARGET).cfg $(OCD_ARGS)
 
@@ -147,7 +151,8 @@ ocd:
 # it might need a custom scrrenrc file ...
 # wthough it could be created dynamically :)
 
-OCD_SCREENRC = /tmp/$(OCD_SESSION).screenrc
+#OCD_SCREENRC = /tmp/$(OCD_SESSION).screenrc
+OCD_SCREENRC = .screenrc.$(OCD_SESSION)
 OCD_SLEEPSEC = 1.5
 ifdef $(OCD_DISTCFG)
 	OCD_COMMAND = `which openocd` -f board/$(TARGET).cfg $(OCD_ARGS)
@@ -155,25 +160,58 @@ else
 	OCD_COMMAND = `which openocd` -f $(CONTIKIMC1322X)/openocd.cfg
 endif
 OCD_SESSION = ocd:$(TARGET)
-OCD_CONNECT = bash -c \"echo Sleeping for $(OCD_SLEEPSEC) seconds...; \
-	      sleep $(OCD_SLEEPSEC) && telnet localhost 4444\"
 
-#/tmp/$(OCD_SESESSION).rc:
+OCD_CONNECT = telnet localhost 4444
+GDB_CONNECT = target remote localhost:3333
+
+OCD_WINDOWN = bash -c \"echo Sleeping for $(OCD_SLEEPSEC) seconds...; \
+	      sleep $(OCD_SLEEPSEC) && # \"
+
+OCD_WINDOW0 = screen -t ocd-log $(OCD_COMMAND)
+OCD_WINDOW1 = screen -t ocd-cli $(OCD_WINDOWN) $(OCD_CONNECT)
+OCD_WINDOW2 = screen -t ocd-gdb $(OCD_WINDOWN) $(GDB_COMMAND) -ex \'$(GDB_CONNECT)\'
+#OCD_WINDOW3 = screen -t ocd-tty $(UDEV_UART) 115200
+OCD_WINDOW3 = screen -t ocd-tty cat $(UDEV_UART)
+
+%.ocd-screenrc: %.elf
+	echo -n > ./$(OCD_SCREENRC).$<
+	echo "startup_message off"	>> ./$(OCD_SCREENRC).$<
+	echo "deflogin off"		>> ./$(OCD_SCREENRC).$<
+	echo "$(OCD_WINDOW0)"		>> ./$(OCD_SCREENRC).$<
+	echo "$(OCD_WINDOW1)\""		>> ./$(OCD_SCREENRC).$<
+	echo "$(OCD_WINDOW2) $<\""	>> ./$(OCD_SCREENRC).$<
+	echo "$(OCD_WINDOW3)"		>> ./$(OCD_SCREENRC).$<
+
+%.ocd-screen: %.elf %.ocd-screenrc
+	screen -c ./$(OCD_SCREENRC).$< -S $(OCD_SESSION).$< -t $(OCD_SESSION).$<
+
+%.ocd-hide: %.elf %.ocd-screenrc
+	screen -c ./$(OCD_SCREENRC).$< -dm -S $(OCD_SESSION).$< -t $(OCD_SESSION).$<
+
+%.ocd-show: %.elf
+	screen -xd $(OCD_SESSION).$<
+
+
 ocd-screenrc:
-	echo -n > $(OCD_SCREENRC)
-	echo "startup_message off"			>> $(OCD_SCREENRC)
-	echo "deflogin off"				>> $(OCD_SCREENRC)
-	echo "screen -t ocd-log  $(OCD_COMMAND)"	>> $(OCD_SCREENRC)
-	echo "screen -t ocd-cli  $(OCD_CONNECT)"	>> $(OCD_SCREENRC)
+	echo -n > /tmp/$(OCD_SCREENRC)
+	echo "startup_message off"	>> /tmp/$(OCD_SCREENRC)
+	echo "deflogin off"		>> /tmp/$(OCD_SCREENRC)
+	echo "$(OCD_WINDOW0)"	>> /tmp/$(OCD_SCREENRC)
+	echo "$(OCD_WINDOW1)\""	>> /tmp/$(OCD_SCREENRC)
+	# use make %.debug in current terminal instead
 
 ocd-screen: ocd-screenrc
-	screen -c $(OCD_SCREENRC) -S $(OCD_SESSION) -t $(OCD_SESSION) 
+	screen -c /tmp/$(OCD_SCREENRC) -S $(OCD_SESSION) -t $(OCD_SESSION) 
 
 ocd-hide: ocd-screenrc
-	screen -c $(OCD_SCREENRC) -dm -S $(OCD_SESSION) -t $(OCD_SESSION)
+	screen -c /tmp/$(OCD_SCREENRC) -dm -S $(OCD_SESSION) -t $(OCD_SESSION)
+	${info now attach gdb with `make PROG.debug`}
 
 ocd-show:
 	screen -xd $(OCD_SESSION)
+
+%.debug: %.elf
+	$(GDB_COMMAND) -ex '$(GDB_CONNECT)' $<
 
 #TODO: add ocd-xscreen here!
 # options are:

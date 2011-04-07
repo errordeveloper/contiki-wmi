@@ -51,7 +51,7 @@ PT_THREAD(URX_fill(struct pt *u, process_event_t ev, data_buffer_t *buf))
 
   static data_buffer_t *_urxbuf = &urxbuf;
 
-  while(1) { //P(); //PT_YIELD_UNTIL(u, ev == PROCESS_EVENT_POLL);
+  while(1) { //PT_YIELD_UNTIL(u, ev == PROCESS_EVENT_POLL);
 
     //U2_GET_LOOP_DEBUG(urxbuf);
 
@@ -127,7 +127,7 @@ PROCESS_THREAD(Talker, ev, data)
   //PROCESS_POLLHANDLER(URX_fill(&URX_thread, ev, &urxbuf));
   PROCESS_BEGIN();
 
-  midi_uart_init(); P();
+  midi_uart_init();
 
   urxbuf_full = process_alloc_event();
 
@@ -137,13 +137,13 @@ PROCESS_THREAD(Talker, ev, data)
 
   while(1) {
 
-    PROCESS_WAIT_EVENT(); P();
+    PROCESS_WAIT_EVENT();
     printf("\n main got ev=%x\n", ev);
     
     if(ev ==  PROCESS_EVENT_POLL) {
 
       //printf("POLLED\n");
-      P(); URX_fill(&URX_thread, ev, &urxbuf);
+      URX_fill(&URX_thread, ev, &urxbuf);
 
       //while(*UART2_URXCON != 0); { urxbuf[0] = *UART2_UDATA; }
 

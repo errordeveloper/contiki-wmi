@@ -236,15 +236,14 @@ int contiki_maca_transmit(unsigned short transmit_len) {
 int contiki_maca_send(const void *payload, unsigned short payload_len) {
 	contiki_maca_prepare(payload, payload_len);
 	contiki_maca_transmit(payload_len);
-	switch(tx_status) {
-	case SUCCESS:
-	case CRC_FAILED: /* CRC_FAILED is usually an ack */
+	if (tx_status == SUCCESS || tx_status == CRC_FAILED) {
+	/* CRC_FAILED is usually an ack */
 		PRINTF("TXOK\n\r");
 		return RADIO_TX_OK;
-	case NO_ACK:
+	} else if (tx_status == NO_ACK) {
 		PRINTF("NOACK\n\r");
 		return RADIO_TX_NOACK;
-	default:
+	} else {
 		PRINTF("TXERR\n\r");
 		return RADIO_TX_ERR;
 	}
