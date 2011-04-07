@@ -40,14 +40,16 @@ U2_RXI_POLL_PROCESS(&Talker);
 static data_buffer_t tcpbuf[10], urxbuf[32], utxbuf[32];
 char status;
 
-static process_event_t urxbuf_full;
+//static process_event_t urxbuf_full;
+
+static struct pt_sem urxbuf_full;
 
 /*---------------------------------------------------------------------------*/
 static
-PT_THREAD(URX_fill(struct pt *u, process_event_t ev, data_buffer_t *buf))
+PT_THREAD(URX_fill(struct pt *p, data_buffer_t *buf))
 {
 
-  PT_BEGIN(u);
+  PT_BEGIN(p);
 
   static data_buffer_t *_urxbuf = &urxbuf;
 
@@ -64,13 +66,14 @@ PT_THREAD(URX_fill(struct pt *u, process_event_t ev, data_buffer_t *buf))
 
     }
 
-    process_post(PROCESS_BROADCAST, urxbuf_full, 2);
+    //process_post(PROCESS_BROADCAST, urxbuf_full, 2);
+    PT_SEM_SIGNAL(p, &urxbuf_full);
 
-    PT_YIELD(u);
+    PT_YIELD(p);
 
   }
 
-  PT_END(u);
+  PT_END(p);
 
 }
 
@@ -89,6 +92,7 @@ PT_THREAD(TCP_send(struct psock *p, process_event_t *ev, data_buffer_t *buf))
     //printf("\n socket got event %x\n", *ev);
     //PSOCK_SEND(p, urxbuf, 32);
 
+    PT_SEM_WAIT(p);
     PSOCK_SEND_STR(p, "UART2 data is ready.\n");
 
   //}
@@ -129,7 +133,9 @@ PROCESS_THREAD(Talker, ev, data)
 
   midi_uart_init();
 
-  urxbuf_full = process_alloc_event();
+  //urxbuf_full = process_alloc_event();
+  PT_SEM_INIT(&urxbuf_full, 0); 
+  /* See: ../../../../core/sys/pt-sem.h */
 
   //PT_INIT(&URX_thread);
 
