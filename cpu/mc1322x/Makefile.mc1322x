@@ -155,9 +155,9 @@ ocd:
 OCD_SCREENRC = .screenrc.$(OCD_SESSION)
 OCD_SLEEPSEC = 1.5
 ifdef $(OCD_DISTCFG)
-	OCD_COMMAND = `which openocd` -f board/$(TARGET).cfg $(OCD_ARGS)
+  OCD_COMMAND = `which openocd` -f board/$(TARGET).cfg $(OCD_ARGS)
 else
-	OCD_COMMAND = `which openocd` -f $(CONTIKIMC1322X)/openocd.cfg
+  OCD_COMMAND = `which openocd` -f $(CONTIKIMC1322X)/openocd.cfg
 endif
 OCD_SESSION = ocd:$(TARGET)
 
@@ -171,7 +171,11 @@ OCD_WINDOW0 = screen -t ocd-log $(OCD_COMMAND)
 OCD_WINDOW1 = screen -t ocd-cli $(OCD_WINDOWN) $(OCD_CONNECT)
 OCD_WINDOW2 = screen -t ocd-gdb $(OCD_WINDOWN) $(GDB_COMMAND) -ex \'$(GDB_CONNECT)\'
 #OCD_WINDOW3 = screen -t ocd-tty $(UDEV_UART) 115200
-OCD_WINDOW3 = screen -t ocd-tty cat $(UDEV_UART)
+#can also try `serialview`
+OCD_W3BASIC = cat $(UDEV_UART)
+OCD_W3EXTRA = bash -c \"echo Press RETURN to show serial port output \
+	      		or Control-C to cancel; read && $(OCD_W3BASIC)\"
+OCD_WINDOW3 = screen -t ocd-tty $(OCD_W3EXTRA)
 
 %.ocd-screenrc: %.elf
 	echo -n > ./$(OCD_SCREENRC).$<
@@ -208,7 +212,7 @@ ocd-hide: ocd-screenrc
 	${info now attach gdb with `make PROG.debug`}
 
 ocd-show:
-	screen -xd $(OCD_SESSION)
+	screen -r $(OCD_SESSION)
 
 %.debug: %.elf
 	$(GDB_COMMAND) -ex '$(GDB_CONNECT)' $<

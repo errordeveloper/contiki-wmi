@@ -44,14 +44,14 @@ static process_event_t urxbuf_full;
 
 /*---------------------------------------------------------------------------*/
 static
-PT_THREAD(URX_fill(struct pt *u, process_event_t ev, data_buffer_t *buf))
+PT_THREAD(URX_fill(struct pt *p, process_event_t *ev, data_buffer_t *buf))
 {
 
-  PT_BEGIN(u);
+  PT_BEGIN(p);
 
   static data_buffer_t *_urxbuf = &urxbuf;
 
-  while(1) { //PT_YIELD_UNTIL(u, ev == PROCESS_EVENT_POLL);
+  //while(1) { //PT_YIELD_UNTIL(p, ev == PROCESS_EVENT_POLL);
 
     //U2_GET_LOOP_DEBUG(urxbuf);
 
@@ -66,12 +66,10 @@ PT_THREAD(URX_fill(struct pt *u, process_event_t ev, data_buffer_t *buf))
 
     process_post(PROCESS_BROADCAST, urxbuf_full, 2);
 
-    PT_YIELD(u);
+    //PT_YIELD(p);
+  //}
 
-  }
-
-  PT_END(u);
-
+  PT_END(p);
 }
 
 //static void URX_fill(void) { U2_GET_LOOP_DEBUG(urxbuf); return; }
@@ -82,8 +80,10 @@ PT_THREAD(TCP_send(struct psock *p, process_event_t *ev, data_buffer_t *buf))
 {
   PSOCK_BEGIN(p);
 
-  //while(1) {
-  //PSOCK_WAIT_UNTIL(p, *ev == urxbuf_full);
+  while(1) {
+
+    // ev is certainly optimized out !!
+    PSOCK_WAIT_UNTIL(p, *ev == urxbuf_full);
 
     //printf("\n urxbuf_full = %x\n", urxbuf_full);
     //printf("\n socket got event %x\n", *ev);
@@ -91,7 +91,7 @@ PT_THREAD(TCP_send(struct psock *p, process_event_t *ev, data_buffer_t *buf))
 
     PSOCK_SEND_STR(p, "UART2 data is ready.\n");
 
-  //}
+  }
   
   /*
    * Next, we use the PSOCK_READTO() function to read incoming data
@@ -112,7 +112,7 @@ PT_THREAD(TCP_send(struct psock *p, process_event_t *ev, data_buffer_t *buf))
    */
    //PSOCK_SEND_STR(p, "Got the following data: ");
    //PSOCK_SEND(p, tcpbuf, PSOCK_DATALEN(p));
-   PSOCK_SEND_STR(p, "Good bye!\r\n");
+  PSOCK_SEND_STR(p, "Good bye!\r\n");
 
   PSOCK_CLOSE(p);
 
@@ -123,8 +123,7 @@ PT_THREAD(TCP_send(struct psock *p, process_event_t *ev, data_buffer_t *buf))
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(Talker, ev, data)
 {
-  //PROCESS_POLLHANDLER(URX_fill());
-  //PROCESS_POLLHANDLER(URX_fill(&URX_thread, ev, &urxbuf));
+  PROCESS_POLLHANDLER(URX_fill(&URX_thread, &ev, &urxbuf));
   PROCESS_BEGIN();
 
   midi_uart_init();
@@ -138,17 +137,7 @@ PROCESS_THREAD(Talker, ev, data)
   while(1) {
 
     PROCESS_WAIT_EVENT();
-    printf("\n main got ev=%x\n", ev);
     
-    if(ev ==  PROCESS_EVENT_POLL) {
-
-      //printf("POLLED\n");
-      URX_fill(&URX_thread, ev, &urxbuf);
-
-      //while(*UART2_URXCON != 0); { urxbuf[0] = *UART2_UDATA; }
-
-    }
-
     if(ev == tcpip_event) {
      
       if(uip_connected()) {
@@ -157,8 +146,13 @@ PROCESS_THREAD(Talker, ev, data)
      
         while(!(uip_aborted() || uip_closed() || uip_timedout())) {
      
-          PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event); // || ev == urxbuf_full);
-	  TCP_send(&TCP_thread, &ev, &urxbuf);
+          //PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event); // || ev == urxbuf_full);
+	  PROCESS_WAIT_EVENT();
+
+	  if (ev == tcpip_event) TCP_send(&TCP_thread, &ev, &urxbuf);
+	  
+	  //if (ev == PROCESS_EVENT_POLL) URX_fill(&URX_thread, &ev, &urxbuf);
+
         }
       }
     }

@@ -8,3 +8,5 @@ eval `awk '\
         		 print ( "alias make."$1" \"make TARGET="$2"\";" ) \
 		} else { print ( "alias make."$1" \"make TARGET="$2" UDEV_UART="$3"\";" ) \
     } } }' $w/alias`
+
+unset w
