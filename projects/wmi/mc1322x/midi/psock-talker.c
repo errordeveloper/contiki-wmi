@@ -11,6 +11,8 @@
 #include "net/uip-udp-packet.h"
 #include "sys/ctimer.h"
 
+#include "sys/pt-sem.h"
+
 #include <string.h>
 
 #include <stdio.h>
@@ -21,15 +23,21 @@
 #include "contiki-net.h"
 
 #define MIDI_DATA_SIZE 0 // 1024
+
 #define data_buffer_t char
 
-#define P() printf("line: %d\n", __LINE__)
+/* #define P() printf("line: %d\n", __LINE__) */
+
 /*
  * To be able to handle more than one connection at a time,
  * each parallell connection needs its own protosocket.
  */
 static struct psock TCP_thread;
 static struct pt    URX_thread;
+
+static struct pt_sem urxbuf_data;
+// may be it could go as struct with pt_sem ?
+static uint8_t urxbuf_mask, urxbuf_test;
 
 PROCESS(Talker, "MIDI Talker");
 AUTOSTART_PROCESSES(&Talker);
@@ -38,64 +46,51 @@ U2_RXI_POLL_PROCESS(&Talker);
 /*---------------------------------------------------------------------------*/
 
 static data_buffer_t tcpbuf[10], urxbuf[32], utxbuf[32];
-char status;
-
-//static process_event_t urxbuf_full;
-
-static struct pt_sem urxbuf_full;
 
 /*---------------------------------------------------------------------------*/
 static
-PT_THREAD(URX_fill(struct pt *p, data_buffer_t *buf))
+PT_THREAD(URX_fill(struct pt *p))
 {
 
   PT_BEGIN(p);
 
-  static data_buffer_t *_urxbuf = &urxbuf;
-
-  while(1) { //PT_YIELD_UNTIL(u, ev == PROCESS_EVENT_POLL);
+  static data_buffer_t *urxbuf_step = &urxbuf;
 
     //U2_GET_LOOP_DEBUG(urxbuf);
 
-    printf("\n urxbuf_full = %x\n", urxbuf_full);
-    while(*UART2_URXCON != 0) {
+    for(urxbuf_mask = 0; *UART2_URXCON != 0; urxbuf_mask++) {
 
-	    *_urxbuf = *UART2_UDATA;
-	    U2_DBG_RX_DATA(*_urxbuf);
-	    _urxbuf++;
+      *urxbuf_step = *UART2_UDATA;
+      U2_DBG_RX_DATA(urxbuf);
+      urxbuf_step++;
 
     }
 
-    //process_post(PROCESS_BROADCAST, urxbuf_full, 2);
-    PT_SEM_SIGNAL(p, &urxbuf_full);
-
-    PT_YIELD(p);
-
-  }
+  PT_SEM_SIGNAL(p, &urxbuf_data);
 
   PT_END(p);
-
 }
 
 //static void URX_fill(void) { U2_GET_LOOP_DEBUG(urxbuf); return; }
 
 /*---------------------------------------------------------------------------*/
 static
-PT_THREAD(TCP_send(struct psock *p, process_event_t *ev, data_buffer_t *buf))
+PT_THREAD(TCP_send(struct psock *p)) //, volatile process_event_t *ev, volatile data_buffer_t *buf))
 {
   PSOCK_BEGIN(p);
 
-  //while(1) {
-  //PSOCK_WAIT_UNTIL(p, *ev == urxbuf_full);
+  while(1) {
 
-    //printf("\n urxbuf_full = %x\n", urxbuf_full);
-    //printf("\n socket got event %x\n", *ev);
+    PT_SEM_WAIT(&((p)->pt), &urxbuf_data);
+
     //PSOCK_SEND(p, urxbuf, 32);
+    // need to test what's the value of semaphore
+    printf("\nurxbuf_mask=%d\n", urxbuf_mask);
 
-    PT_SEM_WAIT(p);
-    PSOCK_SEND_STR(p, "UART2 data is ready.\n");
+    // TODO: send the data instead!
+    PSOCK_SEND_STR(p, "UART2 data is ready.");
 
-  //}
+  }
   
   /*
    * Next, we use the PSOCK_READTO() function to read incoming data
@@ -116,7 +111,7 @@ PT_THREAD(TCP_send(struct psock *p, process_event_t *ev, data_buffer_t *buf))
    */
    //PSOCK_SEND_STR(p, "Got the following data: ");
    //PSOCK_SEND(p, tcpbuf, PSOCK_DATALEN(p));
-   PSOCK_SEND_STR(p, "Good bye!\r\n");
+  PSOCK_SEND_STR(p, "Good bye!\r\n");
 
   PSOCK_CLOSE(p);
 
@@ -127,34 +122,21 @@ PT_THREAD(TCP_send(struct psock *p, process_event_t *ev, data_buffer_t *buf))
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(Talker, ev, data)
 {
-  //PROCESS_POLLHANDLER(URX_fill());
-  //PROCESS_POLLHANDLER(URX_fill(&URX_thread, ev, &urxbuf));
+  PROCESS_POLLHANDLER(URX_fill(&URX_thread));
   PROCESS_BEGIN();
 
   midi_uart_init();
 
-  //urxbuf_full = process_alloc_event();
-  PT_SEM_INIT(&urxbuf_full, 0); 
-  /* See: ../../../../core/sys/pt-sem.h */
+  PT_SEM_INIT(&urxbuf_data, 0);
 
-  //PT_INIT(&URX_thread);
+  /* Is it needed: PT_INIT(&URX_thread); ? */
 
   tcp_listen(UIP_HTONS(1010));
 
   while(1) {
 
     PROCESS_WAIT_EVENT();
-    printf("\n main got ev=%x\n", ev);
     
-    if(ev ==  PROCESS_EVENT_POLL) {
-
-      //printf("POLLED\n");
-      URX_fill(&URX_thread, ev, &urxbuf);
-
-      //while(*UART2_URXCON != 0); { urxbuf[0] = *UART2_UDATA; }
-
-    }
-
     if(ev == tcpip_event) {
      
       if(uip_connected()) {
@@ -163,8 +145,11 @@ PROCESS_THREAD(Talker, ev, data)
      
         while(!(uip_aborted() || uip_closed() || uip_timedout())) {
      
-          PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event); // || ev == urxbuf_full);
-	  TCP_send(&TCP_thread, &ev, &urxbuf);
+          //PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
+	  PROCESS_WAIT_EVENT();
+
+	  if (ev == tcpip_event) TCP_send(&TCP_thread);
+	  
         }
       }
     }

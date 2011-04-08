@@ -17,7 +17,7 @@ UIP_CONF_IPV6=1
 CONTIKI = ../../../../
 include $(CONTIKI)/Makefile.include
 
-router-f1:
+router:
 	cd $(CONTIKI)/examples/ipv6/rpl-border-router/ \
-	&& make TARGET=freescale-1322xusb border-router.load \
-	&& make TARGET=freescale-1322xusb connect-router-xterm
+	&& make border-router.load \
+	&& make connect-router-xterm
