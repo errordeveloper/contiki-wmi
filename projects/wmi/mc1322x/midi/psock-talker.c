@@ -35,7 +35,9 @@
 static struct psock TCP_thread;
 static struct pt    URX_thread;
 
-static struct pt_sem urxbuf_semf;
+static struct pt_sem urxbuf_data;
+// may be it could go as struct with pt_sem ?
+static uint8_t urxbuf_mask, urxbuf_test;
 
 PROCESS(Talker, "MIDI Talker");
 AUTOSTART_PROCESSES(&Talker);
@@ -44,7 +46,6 @@ U2_RXI_POLL_PROCESS(&Talker);
 /*---------------------------------------------------------------------------*/
 
 static data_buffer_t tcpbuf[10], urxbuf[32], utxbuf[32];
-char status;
 
 /*---------------------------------------------------------------------------*/
 static
@@ -53,19 +54,19 @@ PT_THREAD(URX_fill(struct pt *p))
 
   PT_BEGIN(p);
 
-  static data_buffer_t *_urxbuf = &urxbuf;
+  static data_buffer_t *urxbuf_step = &urxbuf;
 
     //U2_GET_LOOP_DEBUG(urxbuf);
 
-    while(*UART2_URXCON != 0) {
+    for(urxbuf_mask = 0; *UART2_URXCON != 0; urxbuf_mask++) {
 
-      *_urxbuf = *UART2_UDATA;
-      U2_DBG_RX_DATA(*_urxbuf);
-      _urxbuf++;
+      *urxbuf_step = *UART2_UDATA;
+      U2_DBG_RX_DATA(urxbuf);
+      urxbuf_step++;
 
     }
 
-  PT_SEM_SIGNAL(p, &urxbuf_semf);
+  PT_SEM_SIGNAL(p, &urxbuf_data);
 
   PT_END(p);
 }
@@ -80,10 +81,13 @@ PT_THREAD(TCP_send(struct psock *p)) //, volatile process_event_t *ev, volatile 
 
   while(1) {
 
-    PT_SEM_WAIT(&((p)->pt), &urxbuf_semf);
+    PT_SEM_WAIT(&((p)->pt), &urxbuf_data);
 
     //PSOCK_SEND(p, urxbuf, 32);
+    // need to test what's the value of semaphore
+    printf("\nurxbuf_mask=%d\n", urxbuf_mask);
 
+    // TODO: send the data instead!
     PSOCK_SEND_STR(p, "UART2 data is ready.");
 
   }
@@ -123,7 +127,7 @@ PROCESS_THREAD(Talker, ev, data)
 
   midi_uart_init();
 
-  PT_SEM_INIT(&urxbuf_semf, 0);
+  PT_SEM_INIT(&urxbuf_data, 0);
 
   /* Is it needed: PT_INIT(&URX_thread); ? */
 

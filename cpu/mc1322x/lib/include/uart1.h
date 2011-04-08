@@ -219,34 +219,34 @@ extern void uart2_rxi_handler(void)  __attribute__((weak));
 
 
 /* This can be done a bit better with switch() */
-#define U2_DBG_RX_DATA(x) status = *UART2_USTAT; \
-		  printf(":%i (Err: ", x); \
-		  if(status == 0x80) { printf("N"); } else { \
-	  if(bit_is_set(status, START_BIT_ERROR))	{ printf("F"); } \
-	  if(bit_is_set(status, STOP_BIT_ERROR))	{ printf("S"); } \
-	  if(bit_is_set(status, PARITY_ERROR))		{ printf("P"); } \
-	  if(bit_is_set(status, RX_FIFO_OVERRUN))	{ printf("O"); } \
-	  if(bit_is_set(status, RX_FIFO_UNDERRUN))	{ printf("U"); } \
-		  } printf(" =%x)\n", status)
+#define U2_DBG_RX_DATA(x) x##_test = *UART2_USTAT; \
+		  printf(":%i (Err: ", *x##_step); \
+		  if(x##_test == 0x80) { printf("N"); } else { \
+	  if(bit_is_set(x##_test, START_BIT_ERROR))	{ printf("F"); } \
+	  if(bit_is_set(x##_test, STOP_BIT_ERROR))	{ printf("S"); } \
+	  if(bit_is_set(x##_test, PARITY_ERROR))	{ printf("P"); } \
+	  if(bit_is_set(x##_test, RX_FIFO_OVERRUN))	{ printf("O"); } \
+	  if(bit_is_set(x##_test, RX_FIFO_UNDERRUN))	{ printf("U"); } \
+		  } printf(" =%x)\n", x##_test)
 
 
 /* Perhaps __BASE_FILE__ could be used for uniq name,
  * but this should be sufficient. */
-#define U2_GET_LOOP(x) static char *_##x = &x; \
-	while(*UART2_URXCON != 0) { *(_##x++) = *UART2_UDATA; }
+#define U2_GET_LOOP(x) static char *x##_step = &x; \
+	while(*UART2_URXCON != 0) { *(x##_step++) = *UART2_UDATA; }
 
-#define U2_GET_POST(x) static char *_##x = &x;	\
+#define U2_GET_POST(x) static char *x##_step = &x;	\
 	if(*UART2_URXCON != 0) { do		\
-	{ *(_##x++) = *UART2_UDATA; }		\
+	{ *(x##_step++) = *UART2_UDATA; }		\
 	while(*UART2_URXCON != 0);		\
-	process_post(PROCESS_BROADCAST, done_##x, 2); }
+	process_post(PROCESS_BROADCAST, x##_full, 2); }
 
 /* Note that it will only print proper values of USTAT
  * when called inside of the rxi_handler function. */
-#define U2_GET_LOOP_DEBUG(x) static char *_##x = &x;	\
+#define U2_GET_LOOP_DEBUG(x) static char *x##_step = &x;\
 	while(*UART2_URXCON != 0) {			\
-		*_##x = *UART2_UDATA;			\
-		U2_DBG_RX_DATA(*_##x); _##x++; }
+		*x##_step = *UART2_UDATA;			\
+		U2_DBG_RX_DATA(x); x##_step++; }
 
 #define U2_TXI_POLL_PROCESS(x) void uart2_txi_handler(void){ process_poll(x); }
 #define U2_RXI_POLL_PROCESS(x) void uart2_rxi_handler(void){ process_poll(x); }
