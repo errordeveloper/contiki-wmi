@@ -11,6 +11,8 @@
 #include "net/uip-udp-packet.h"
 #include "sys/ctimer.h"
 
+#include "sys/pt-sem.h"
+
 #include <string.h>
 
 #include <stdio.h>
@@ -21,15 +23,19 @@
 #include "contiki-net.h"
 
 #define MIDI_DATA_SIZE 0 // 1024
+
 #define data_buffer_t char
 
-#define P() printf("line: %d\n", __LINE__)
+/* #define P() printf("line: %d\n", __LINE__) */
+
 /*
  * To be able to handle more than one connection at a time,
  * each parallell connection needs its own protosocket.
  */
 static struct psock TCP_thread;
 static struct pt    URX_thread;
+
+static struct pt_sem urxbuf_semf;
 
 PROCESS(Talker, "MIDI Talker");
 AUTOSTART_PROCESSES(&Talker);
@@ -40,34 +46,26 @@ U2_RXI_POLL_PROCESS(&Talker);
 static data_buffer_t tcpbuf[10], urxbuf[32], utxbuf[32];
 char status;
 
-static process_event_t urxbuf_full;
-
 /*---------------------------------------------------------------------------*/
 static
-PT_THREAD(URX_fill(struct pt *p, process_event_t *ev, data_buffer_t *buf))
+PT_THREAD(URX_fill(struct pt *p))
 {
 
   PT_BEGIN(p);
 
   static data_buffer_t *_urxbuf = &urxbuf;
 
-  //while(1) { //PT_YIELD_UNTIL(p, ev == PROCESS_EVENT_POLL);
-
     //U2_GET_LOOP_DEBUG(urxbuf);
 
-    printf("\n urxbuf_full = %x\n", urxbuf_full);
     while(*UART2_URXCON != 0) {
 
-	    *_urxbuf = *UART2_UDATA;
-	    U2_DBG_RX_DATA(*_urxbuf);
-	    _urxbuf++;
+      *_urxbuf = *UART2_UDATA;
+      U2_DBG_RX_DATA(*_urxbuf);
+      _urxbuf++;
 
     }
 
-    process_post(PROCESS_BROADCAST, urxbuf_full, 2);
-
-    //PT_YIELD(p);
-  //}
+  PT_SEM_SIGNAL(p, &urxbuf_semf);
 
   PT_END(p);
 }
@@ -76,20 +74,17 @@ PT_THREAD(URX_fill(struct pt *p, process_event_t *ev, data_buffer_t *buf))
 
 /*---------------------------------------------------------------------------*/
 static
-PT_THREAD(TCP_send(struct psock *p, process_event_t *ev, data_buffer_t *buf))
+PT_THREAD(TCP_send(struct psock *p)) //, volatile process_event_t *ev, volatile data_buffer_t *buf))
 {
   PSOCK_BEGIN(p);
 
   while(1) {
 
-    // ev is certainly optimized out !!
-    PSOCK_WAIT_UNTIL(p, *ev == urxbuf_full);
+    PT_SEM_WAIT(&((p)->pt), &urxbuf_semf);
 
-    //printf("\n urxbuf_full = %x\n", urxbuf_full);
-    //printf("\n socket got event %x\n", *ev);
     //PSOCK_SEND(p, urxbuf, 32);
 
-    PSOCK_SEND_STR(p, "UART2 data is ready.\n");
+    PSOCK_SEND_STR(p, "UART2 data is ready.");
 
   }
   
@@ -123,14 +118,14 @@ PT_THREAD(TCP_send(struct psock *p, process_event_t *ev, data_buffer_t *buf))
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(Talker, ev, data)
 {
-  PROCESS_POLLHANDLER(URX_fill(&URX_thread, &ev, &urxbuf));
+  PROCESS_POLLHANDLER(URX_fill(&URX_thread));
   PROCESS_BEGIN();
 
   midi_uart_init();
 
-  urxbuf_full = process_alloc_event();
+  PT_SEM_INIT(&urxbuf_semf, 0);
 
-  //PT_INIT(&URX_thread);
+  /* Is it needed: PT_INIT(&URX_thread); ? */
 
   tcp_listen(UIP_HTONS(1010));
 
@@ -146,13 +141,11 @@ PROCESS_THREAD(Talker, ev, data)
      
         while(!(uip_aborted() || uip_closed() || uip_timedout())) {
      
-          //PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event); // || ev == urxbuf_full);
+          //PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
 	  PROCESS_WAIT_EVENT();
 
-	  if (ev == tcpip_event) TCP_send(&TCP_thread, &ev, &urxbuf);
+	  if (ev == tcpip_event) TCP_send(&TCP_thread);
 	  
-	  //if (ev == PROCESS_EVENT_POLL) URX_fill(&URX_thread, &ev, &urxbuf);
-
         }
       }
     }
