@@ -69,8 +69,8 @@
 
 #include "sys/pt.h"
 
-#ifndef pb_data_t
-typedef pb_exec_t unsigned int;
+#ifndef pb_flag_t
+typedef pb_flag_t unsigned char;
 #endif
 
 #ifndef pb_call_t
@@ -81,29 +81,38 @@ typedef pb_call_t unsigned char;
 typedef pb_data_t long int;
 #endif
 
+typedef pb_size_t unsigned short int;
+
 // volatile /* ? */
 struct pb_path_t {
   pb_flag_t x; // execution flag
   pb_call_t c; // command call
-  pb_data_t d; // data signal
+  pb_data_t d; // data
+  pb_size_t s; // size
   // pb_meta_t m; // something ??
 };
 
 #define PB_PATH(x) static struct pb_path_t pb_path_##x
 
-#define PB_INIT(x, flag, call, data) 
+#define PB_INIT(x, flag, call, data)
 
 enum {
+  // PB_FLAG_CALL = 0x22,
+  // PB_FLAG_DATA = 0x44,
+  // PB_FLAG_DONE = 0xdd,
   PB_FLAG_ZERO = 0x00,
   PB_FLAG_NEXT = 0x01,
   PB_FLAG_LOCK = 0xff,
+  PB_FLAG_FREE = 0xee,
 };
 
 enum {
   PB_CALL_ZERO = 0x00,
   PB_CALL_PULL = 0x11,
-  PB_CALL_PUSH = 0xdd,
+  PB_CALL_DATA = 0x44,
   PB_CALL_WIPE = 0xcc,
+  PB_CALL_DONE = 0xdd,
+  PB_CALL_PUSH = 0xff,
 };
 
 #if 0
@@ -112,76 +121,72 @@ enum {
 }
 #endif
 
-/**
- * Initialize a semaphore
- *
- * This macro initializes a semaphore with a value for the
- * counter. Internally, the semaphores use an "unsigned int" to
- * represent the counter, and therefore the "count" argument should be
- * within range of an unsigned int.
- *
- * \param s (struct pt_sem *) A pointer to the pt_sem struct
- * representing the semaphore
- *
- * \param c (unsigned int) The initial count of the semaphore.
- * \hideinitializer
- */
-#define PB_FALG(p, s, flag) (s)->x = flag
-#define PB_CALL(p, s, call) (s)->c = call
-#define PB_DATA(p, s, data) 			\
+#define PB_INCR(v) ++(v)->x
+#define PB_DECR(v) --(v)->x
+
+/* Set protobus flag to a specific value */
+#define PB_FLAG(v) (v)->x
+
+/* Store a command for execution */
+#define PB_CALL(v) (v)->c
+#define PB_DONE(v) PB_CALL(v) = PB_CALL_DONE
+
+/* Instantiate a lock on protobus */
+#define PB_LOCK(v) PB_FLAG(v) = PB_FLAG_LOCK
+/* Release the lock from protobus */
+#define PB_FREE(v) PB_FLAG(v) = PB_FLAG_FREE
+
+/* Retrun data */
+#define PB_DATA(v) (v)->d
+
+/* Return size */
+#define PB_SIZE(v) (v)->s
+
+#define PB_WAIT(pt, v, y, x)			\
+  PT_WAIT_UNTIL(pt, y(v) == y##x)
+
+/* Send data when the lock is free */
+#define PB_SEND(pt, v, data, size)		\
   do {						\
-    PT_WAIT_UNTIL((s)->x != PB_FLAG_LOCK);	\
-    (s)->d = data;				\
+    PB_WAIT(pt, v, PB_FLAG, FREE);			\
+    PB_DATA(v) = data;				\
+    PB_SIZE(v) = size;				\
+    PB_FLAG(v) = PB_FLAG_DATA;			\
   } while(0)
 
-#define PB_PUSH(s, data)			\
+/* Same as PB_SEND() but ignore the lock and
+ * notify the reciever about this fact. */
+#define PB_PUSH(v, data, size)			\
   do {						\
-    (s)->c = PB_CALL_PUSH;			\
-    (s)->d = data;				\
-    (s)->x = PB_FLAG_NEXT;			\
+    PB_DATA(v) = data;				\
+    PB_SIZE(v) = size;				\
+    PB_CALL(v) = PB_CALL_PUSH;			\
+    PB_FLAG(v) = PB_FLAG_DATA;			\
   } while(0)
 
-#define PB_WIPE(s)
+// #define PB_WIPE(v)
 
-/**
- * Wait for a semaphore
- *
- * This macro carries out the "wait" operation on the semaphore. The
- * wait operation causes the protothread to block while the counter is
- * zero. When the counter reaches a value larger than zero, the
- * protothread will continue.
- *
- * \param pt (struct pt *) A pointer to the protothread (struct pt) in
- * which the operation is executed.
- *
- * \param s (struct pt_sem *) A pointer to the pt_sem struct
- * representing the semaphore
- *
- * \hideinitializer
- */
-#define PB_WAIT(pt, s)				\
-  do {						\
-    PT_WAIT_UNTIL(pt, (s)->x > 0);		\
-    --(s)->x;					\
-  } while(0)
 
-/**
- * Signal a semaphore
+/* Example:
  *
- * This macro carries out the "signal" operation on the semaphore. The
- * signal operation increments the counter inside the semaphore, which
- * eventually will cause waiting protothreads to continue executing.
+ * producer loop:
+ * 		PB_SEND(pt, pbus, data, size);
+ * 		PB_WAIT(pbus, PB_CALL, DONE);
  *
- * \param pt (struct pt *) A pointer to the protothread (struct pt) in
- * which the operation is executed.
+ * consumer loop:
+ * 		PB_WAIT(pt, pbus, PB_FLAG, CALL);
+ * 		if(PB_CALL(pbus) == PB_CALL_DATA)
+ *		{
+ *			PB_LOCK(pbus);
+ * 			data = PB_DATA(pbus);
+ * 			PB_CALL(pbus) = PB_CALL_DONE;
+ * 			PB_FREE(pbus);
+ * 		} else { other_task(); }
  *
- * \param s (struct pt_sem *) A pointer to the pt_sem struct
- * representing the semaphore
- *
- * \hideinitializer
  */
-#define PB_INCR(pt, s) ++(s)->x
-#define PB_DECR(pt, s) --(s)->x
+
+/* READ() should be a function really */
+// #define PB_READ(v)
 
 #endif /* __PB_H__ */
 
