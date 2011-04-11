@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010, Mariano Alvira <mar@devl.org> and other contributors
- * to the MC1322x project (http://mc1322x.devl.org)
+ * Copyright (c) 2010, Swedish Institute of Computer Science.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,30 +26,20 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * This file is part of libmc1322x: see http://mc1322x.devl.org
- * for details. 
+ * -----------------------------------------------------------------
  *
- *
+ * Author  : Adam Dunkels, Joakim Eriksson, Niclas Finne
  */
 
-#ifndef BOARD_FREESCALE_NCB_H
-#define BOARD_FREESCALE_NCB_H
+#ifndef __LIGHT_SENSOR_H__
+#define __LIGHT_SENSOR_H__
 
-#define LED_RED    23
-#define LED_GREEN  24
-#define LED_BLUE   25
+#include "lib/sensors.h"
 
-/* XTAL TUNE parameters */
-/* see http://devl.org/pipermail/mc1322x/2009-December/000162.html */
-/* for details about how to make this measurment */
+extern const struct sensors_sensor light_sensor;
 
-/* Coarse tune: add 4pf */
-#define CTUNE_4PF 1
-/* Coarse tune: add 0-15 pf */
-#define CTUNE 8
-/* Fine tune: add FTUNE * 156fF (FTUNE is 4bits) */
-#define FTUNE 15
+#define LIGHT_SENSOR_PHOTOSYNTHETIC 0
+#define LIGHT_SENSOR_TOTAL_SOLAR    1
 
-#include <std_conf.h>
 
-#endif
+#endif /* __LIGHT-SENSOR_H__ */
