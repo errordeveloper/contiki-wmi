@@ -17,6 +17,8 @@ UIP_CONF_IPV6=1
 CONTIKI = ../../../../
 include $(CONTIKI)/Makefile.include
 
+## GDB_BREAKER = -ex \'break bug\'
+
 router:
 	cd $(CONTIKI)/examples/ipv6/rpl-border-router/ \
 	&& make border-router.load \

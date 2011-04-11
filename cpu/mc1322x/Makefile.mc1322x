@@ -169,7 +169,7 @@ OCD_WINDOWN = bash -c \"echo Sleeping for $(OCD_SLEEPSEC) seconds...; \
 
 OCD_WINDOW0 = screen -t ocd-log $(OCD_COMMAND)
 OCD_WINDOW1 = screen -t ocd-cli $(OCD_WINDOWN) $(OCD_CONNECT)
-OCD_WINDOW2 = screen -t ocd-gdb $(OCD_WINDOWN) $(GDB_COMMAND) -ex \'$(GDB_CONNECT)\'
+OCD_WINDOW2 = screen -t ocd-gdb $(OCD_WINDOWN) $(GDB_COMMAND) -ex \'$(GDB_CONNECT)\' $(GDB_BREAKER)
 #OCD_WINDOW3 = screen -t ocd-tty $(UDEV_UART) 115200
 #can also try `serialview`
 OCD_W3BASIC = cat $(UDEV_UART)

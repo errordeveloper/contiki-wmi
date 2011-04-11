@@ -70,36 +70,35 @@
 #include "sys/pt.h"
 
 #ifndef pb_flag_t
-typedef pb_flag_t unsigned char;
+typedef unsigned char pb_flag_t;
 #endif
 
 #ifndef pb_call_t
-typedef pb_call_t unsigned char;
+typedef unsigned char pb_call_t;
 #endif
 
+#if 0
 #ifndef pb_data_t
-typedef pb_data_t long int;
+typedef long int *pb_data_t;
+#endif
 #endif
 
-typedef pb_size_t unsigned short int;
+typedef unsigned short int pb_size_t;
 
 // volatile /* ? */
 struct pb_path_t {
-  pb_flag_t x; // execution flag
+  pb_flag_t x; // calling flag
   pb_call_t c; // command call
-  pb_data_t d; // data
-  pb_size_t s; // size
+  pb_data_t d; // data pointer
+  pb_size_t s; // size of data
   // pb_meta_t m; // something ??
 };
 
 #define PB_PATH(x) static struct pb_path_t pb_path_##x
 
-#define PB_INIT(x, flag, call, data)
+
 
 enum {
-  // PB_FLAG_CALL = 0x22,
-  // PB_FLAG_DATA = 0x44,
-  // PB_FLAG_DONE = 0xdd,
   PB_FLAG_ZERO = 0x00,
   PB_FLAG_NEXT = 0x01,
   PB_FLAG_LOCK = 0xff,
@@ -142,16 +141,23 @@ enum {
 /* Return size */
 #define PB_SIZE(v) (v)->s
 
-#define PB_WAIT(pt, v, y, x)			\
-  PT_WAIT_UNTIL(pt, y(v) == y##x)
+#define PB_INIT(v)				\
+  do {						\
+    PB_FLAG(v) = PB_FLAG_FREE;			\
+    PB_CALL(v) = 0;				\
+    PB_DATA(v) = 0;				\
+  } while(0)
 
-/* Send data when the lock is free */
+#define PB_WAIT(pt, v, y, x)			\
+  PT_WAIT_UNTIL(pt, y(v) == y##_##x)
+
+/* Send volatile data when the lock is free */
 #define PB_SEND(pt, v, data, size)		\
   do {						\
     PB_WAIT(pt, v, PB_FLAG, FREE);			\
     PB_DATA(v) = data;				\
     PB_SIZE(v) = size;				\
-    PB_FLAG(v) = PB_FLAG_DATA;			\
+    PB_CALL(v) = PB_CALL_DATA;			\
   } while(0)
 
 /* Same as PB_SEND() but ignore the lock and
@@ -161,7 +167,6 @@ enum {
     PB_DATA(v) = data;				\
     PB_SIZE(v) = size;				\
     PB_CALL(v) = PB_CALL_PUSH;			\
-    PB_FLAG(v) = PB_FLAG_DATA;			\
   } while(0)
 
 // #define PB_WIPE(v)
