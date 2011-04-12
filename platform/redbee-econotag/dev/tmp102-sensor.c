@@ -78,7 +78,5 @@ static int configure(int type, int c) {
 	return 0;
 }
 
-
 /*---------------------------------------------------------------------------*/
 SENSORS_SENSOR(tmp102_sensor, "Temperature", value, configure, status); // register the functions
-

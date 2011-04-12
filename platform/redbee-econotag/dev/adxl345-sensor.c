@@ -77,7 +77,5 @@ static int configure(int type, int c) {
 	return 0;
 }
 
-
 /*---------------------------------------------------------------------------*/
 SENSORS_SENSOR(adxl345_sensor, "Accelerometer", value, configure, status); // register the functions
-
