@@ -47,9 +47,13 @@ U2_RXI_POLL_PROCESS(&Talker);
 
 /*---------------------------------------------------------------------------*/
 
-static data_buffer_t tcpbuf[10],
-	urxbuf[32], *urxbuf_step,
-	utxbuf[32], *utxbuf_step;
+static data_buffer_t tcpbuf[10];
+	//urxbuf[32],
+	//*urxbuf_step,
+	//utxbuf[32],
+	//*utxbuf_step;
+
+static data_buffer_t *uip_appdata_step, uip_appdata_test;
 
 #define PB_CALL_SKIP PB_CALL_DONE
 /*---------------------------------------------------------------------------*/
@@ -62,16 +66,16 @@ PT_THREAD(URX_fill(struct pt *p))
 {
   PT_BEGIN(p);
 
-  urxbuf_step = &urxbuf;
+  uip_appdata_step = &uip_appdata;
 
   //PB_WAIT(p, &urx, PB_CALL, DONE);
     //U2_GET_LOOP_DEBUG(urxbuf);
 
     for(urxbuf_mask = 0; *UART2_URXCON != 0; urxbuf_mask++) {
 
-      *urxbuf_step = *UART2_UDATA;
-      U2_DBG_RX_DATA(urxbuf);
-      urxbuf_step++;
+      *uip_appdata_step = *UART2_UDATA;
+      U2_DBG_RX_DATA(uip_appdata);
+      uip_appdata_step++;
 
     }
 
@@ -80,7 +84,7 @@ PT_THREAD(URX_fill(struct pt *p))
     PB_WAIT(p, &urx, PB_CALL, DONE);
   }
 
-  PB_SEND(p, &urx, &urxbuf, urxbuf_mask);
+  PB_SEND(p, &urx, &uip_appdata, urxbuf_mask);
 
   PT_END(p);
 }
@@ -92,7 +96,7 @@ URX_proc(void *data)
 
   printf("\nurxbuf_mask=%d", PB_SIZE(d));
 
-  memcpy(uip_appdata, *PB_DATA(d), PB_SIZE(d));
+  //memcpy(uip_appdata, *PB_DATA(d), PB_SIZE(d));
 
   return PB_SIZE(d);
 }
