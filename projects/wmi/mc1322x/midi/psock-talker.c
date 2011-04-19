@@ -85,8 +85,17 @@ PT_THREAD(URX_fill(struct pt *p))
   PT_END(p);
 }
 
-//static void URX_fill(void) { U2_GET_LOOP_DEBUG(urxbuf); return; }
+static unsigned short
+URX_proc(void *data)
+{
+  struct pb_path_t *d = (struct pb_path_t *)data;
 
+  printf("\nurxbuf_mask=%d", PB_SIZE(d));
+
+  memcpy(uip_appdata, *PB_DATA(d), PB_SIZE(d));
+
+  return PB_SIZE(d);
+}
 /*---------------------------------------------------------------------------*/
 static
 PT_THREAD(TCP_send(struct psock *p)) //, volatile process_event_t *ev, volatile data_buffer_t *buf))
@@ -99,7 +108,8 @@ PT_THREAD(TCP_send(struct psock *p)) //, volatile process_event_t *ev, volatile 
     PB_WAIT(&((p)->pt), &urx, PB_CALL, DATA);
     PB_LOCK(&urx);
 
-    PSOCK_SEND(p, PB_DATA(&urx), PB_SIZE(&urx));
+    //PSOCK_SEND(p, PB_DATA(&urx), PB_SIZE(&urx));
+    PSOCK_GENERATOR_SEND(p, URX_proc, &urx);
 
     // TODO: send the data instead!
     //PSOCK_SEND_STR(p, "UART2 data is ready.");
@@ -127,7 +137,7 @@ PT_THREAD(TCP_send(struct psock *p)) //, volatile process_event_t *ev, volatile 
    */
    //PSOCK_SEND_STR(p, "Got the following data: ");
    //PSOCK_SEND(p, tcpbuf, PSOCK_DATALEN(p));
-  PSOCK_SEND_STR(p, "Good bye!\r\n");
+   //PSOCK_SEND_STR(p, "Good bye!\r\n");
 
   PSOCK_CLOSE(p);
 
