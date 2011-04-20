@@ -35,9 +35,24 @@
 static struct psock TCP_thread;
 static struct pt    URX_thread;
 
-static struct pt_sem urxbuf_data;
+//static struct pt_sem urxbuf_data;
 // may be it could go as struct with pt_sem ?
-static uint8_t urxbuf_mask, urxbuf_test;
+//static uint8_t urxbuf_mask, urxbuf_test;
+
+struct signal {
+  unsigned short size;
+  char flag;
+};
+
+static struct signal urx;
+
+static unsigned short
+URX_proc(void *s)
+{
+  struct signal *u = (struct signal *)s;
+
+  return u->size;
+}
 
 PROCESS(Talker, "MIDI Talker");
 AUTOSTART_PROCESSES(&Talker);
@@ -45,9 +60,10 @@ U2_RXI_POLL_PROCESS(&Talker);
 
 /*---------------------------------------------------------------------------*/
 
-static data_buffer_t tcpbuf[10],
+static data_buffer_t tcpbuf[10]; /*,
 	urxbuf[32], urxbuf_step,
 	utxbuf[32], utxbuf_step;
+	*/
 
 /*---------------------------------------------------------------------------*/
 static
@@ -56,24 +72,39 @@ PT_THREAD(URX_fill(struct pt *p))
 
   PT_BEGIN(p);
 
-  urxbuf_step = &urxbuf;
+  if ( urx.flag != 0xff ) {
+    PT_WAIT_UNTIL(p, urx.flag == 0);
+  }
+
+  urx.size = 0;
+
+  printf("UART2_URXCON =%d\n", *UART2_URXCON);
+
+  while(*UART2_URXCON > 0) {
+
+  bcopy(UART2_UDATA, &uip_appdata[urx.size++], 1);
+
+  }
+
+  urx.flag = 1;
+
+
+  //urxbuf_step = &urxbuf;
 
     //U2_GET_LOOP_DEBUG(urxbuf);
 
-    for(urxbuf_mask = 0; *UART2_URXCON != 0; urxbuf_mask++) {
+    /*for(urxbuf_mask = 0; *UART2_URXCON != 0; urxbuf_mask++) {
 
       *urxbuf_step = *UART2_UDATA;
       U2_DBG_RX_DATA(urxbuf);
       urxbuf_step++;
 
-    }
+    }*/
 
-  PT_SEM_SIGNAL(p, &urxbuf_data);
+  //PT_SEM_SIGNAL(p, &urxbuf_data);
 
   PT_END(p);
 }
-
-//static void URX_fill(void) { U2_GET_LOOP_DEBUG(urxbuf); return; }
 
 /*---------------------------------------------------------------------------*/
 static
@@ -83,14 +114,13 @@ PT_THREAD(TCP_send(struct psock *p)) //, volatile process_event_t *ev, volatile 
 
   while(1) {
 
-    PT_SEM_WAIT(&((p)->pt), &urxbuf_data);
+    PT_WAIT_UNTIL(&((p)->pt), urx.flag == 1);
 
-    //PSOCK_SEND(p, urxbuf, 32);
-    // need to test what's the value of semaphore
-    printf("\nurxbuf_mask=%d\n", urxbuf_mask);
+    printf("\nurx.size=%d\n", URX_proc(&urx));
 
-    // TODO: send the data instead!
-    PSOCK_SEND_STR(p, "UART2 data is ready.");
+    PSOCK_GENERATOR_SEND(p, URX_proc, &urx);
+
+    urx.flag = 0;
 
   }
   
@@ -113,7 +143,7 @@ PT_THREAD(TCP_send(struct psock *p)) //, volatile process_event_t *ev, volatile 
    */
    //PSOCK_SEND_STR(p, "Got the following data: ");
    //PSOCK_SEND(p, tcpbuf, PSOCK_DATALEN(p));
-  PSOCK_SEND_STR(p, "Good bye!\r\n");
+   //PSOCK_SEND_STR(p, "Good bye!\r\n");
 
   PSOCK_CLOSE(p);
 
@@ -129,11 +159,11 @@ PROCESS_THREAD(Talker, ev, data)
 
   midi_uart_init();
 
-  PT_SEM_INIT(&urxbuf_data, 0);
+  urx.flag = 0xff;
 
   /* Is it needed: PT_INIT(&URX_thread); ? */
 
-  tcp_listen(UIP_HTONS(1010));
+  tcp_listen(UIP_HTONS(2020));
 
   while(1) {
 
@@ -154,9 +184,9 @@ PROCESS_THREAD(Talker, ev, data)
 	  
         }
       }
-    }
-  }  
-  
+    } else { urx.flag = 0xff; }
+  }
+
   PROCESS_END();
 }
 /*---------------------------------------------------------------------------*/
