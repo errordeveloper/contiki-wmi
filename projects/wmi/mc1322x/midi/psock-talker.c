@@ -26,23 +26,23 @@
 
 #define data_buffer_t char
 
-/* #define P() printf("line: %d\n", __LINE__) */
+/* Won't work for some reason!
+ * #define URX_proc(x) (urx->size)
+*/
+
+#define P() printf("line: %d", __LINE__)
 
 /*
  * To be able to handle more than one connection at a time,
  * each parallell connection needs its own protosocket.
- */
+*/
 static struct psock TCP_thread;
 static struct pt    URX_thread;
-
-//static struct pt_sem urxbuf_data;
-// may be it could go as struct with pt_sem ?
-//static uint8_t urxbuf_mask, urxbuf_test;
 
 struct signal {
   struct timer time;
   unsigned short size;
-  char flag;
+  unsigned short flag;
 };
 
 static unsigned short
@@ -50,10 +50,9 @@ URX_proc(void *u)
 {
   struct signal *urx = (struct signal *) u;
 
-  return urx->size;
+  return (unsigned short) &(urx)->size;
 }
 
-volatile struct signal RX;
 
 PROCESS(Talker, "MIDI Talker");
 AUTOSTART_PROCESSES(&Talker);
@@ -61,19 +60,19 @@ U2_RXI_POLL_PROCESS(&Talker);
 
 /*---------------------------------------------------------------------------*/
 
-static data_buffer_t tcpbuf[10]; /*,
-	urxbuf[32], urxbuf_step,
-	utxbuf[32], utxbuf_step;
-	*/
+volatile struct signal RX;
+static struct signal *urx = (struct signal *) &RX;
+
+static data_buffer_t tcpbuf[10];
 
 /*---------------------------------------------------------------------------*/
 static
-PT_THREAD(URX_fill(struct pt *p, void *u))
+PT_THREAD(URX_fill(struct pt *p)) //, void *u))
 {
 
   PT_BEGIN(p);
 
-  struct signal *urx = (struct signal *)u;
+  //struct signal *urx = (struct signal *) u;
 
   if ( urx->flag != 0xff ) {
     PT_WAIT_UNTIL(p, (urx->flag == 0 || timer_expired(&urx->time)));
@@ -81,35 +80,39 @@ PT_THREAD(URX_fill(struct pt *p, void *u))
 
   urx->size = 0;
 
-  printf("UART2_URXCON =%d\n", *UART2_URXCON);
+  printf("URXCON=%d\n", *UART2_URXCON);
 
   while(*UART2_URXCON > 0) {
     bcopy(UART2_UDATA, &uip_appdata[urx->size++], 1);
+    printf("f=%d; s=%d;\n", urx->flag, urx->size);
   }
 
   urx->flag = 1;
+  P(); printf("\tf=%d\n", urx->flag);
 
   PT_END(p);
 }
 
 /*---------------------------------------------------------------------------*/
 static
-PT_THREAD(TCP_send(struct psock *p, void *u))
+PT_THREAD(TCP_send(struct psock *p)) //, void *u))
 {
   PSOCK_BEGIN(p);
 
-  struct signal *urx = (struct signal *) u;
+  //struct signal *urx = (struct signal *) u;
 
   while(1) {
 
+    P(); printf("\tf=%d\n", urx->flag);
     PT_WAIT_UNTIL(&((p)->pt), urx->flag == 1);
 
-    printf("\nurx.size=%d\n", URX_proc(&urx));
+    printf("\ns=%d\n", URX_proc(NULL));
 
-    PSOCK_GENERATOR_SEND(p, URX_proc, &urx);
+    PSOCK_GENERATOR_SEND(p, URX_proc, NULL);
 
     timer_reset(&urx->time);
     urx->flag = 0;
+    P(); printf("\tf=%d\n", urx->flag);
 
   }
   
@@ -143,9 +146,8 @@ PT_THREAD(TCP_send(struct psock *p, void *u))
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(Talker, ev, data)
 {
-  static struct signal *urx = (struct signal *) &RX;
 
-  PROCESS_POLLHANDLER(URX_fill(&URX_thread, &urx));
+  PROCESS_POLLHANDLER(URX_fill(&URX_thread)); //, &urx));
   PROCESS_BEGIN();
 
 
@@ -174,7 +176,7 @@ PROCESS_THREAD(Talker, ev, data)
           //PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
 	  PROCESS_WAIT_EVENT();
 
-	  if (ev == tcpip_event) TCP_send(&TCP_thread, &urx);
+	  if (ev == tcpip_event) TCP_send(&TCP_thread); //, &urx);
 	  
         }
       }
