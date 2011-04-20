@@ -40,19 +40,20 @@ static struct pt    URX_thread;
 //static uint8_t urxbuf_mask, urxbuf_test;
 
 struct signal {
+  struct timer time;
   unsigned short size;
   char flag;
 };
 
-static struct signal urx;
-
 static unsigned short
-URX_proc(void *s)
+URX_proc(void *u)
 {
-  struct signal *u = (struct signal *)s;
+  struct signal *urx = (struct signal *) u;
 
-  return u->size;
+  return urx->size;
 }
+
+volatile struct signal RX;
 
 PROCESS(Talker, "MIDI Talker");
 AUTOSTART_PROCESSES(&Talker);
@@ -67,60 +68,48 @@ static data_buffer_t tcpbuf[10]; /*,
 
 /*---------------------------------------------------------------------------*/
 static
-PT_THREAD(URX_fill(struct pt *p))
+PT_THREAD(URX_fill(struct pt *p, void *u))
 {
 
   PT_BEGIN(p);
 
-  if ( urx.flag != 0xff ) {
-    PT_WAIT_UNTIL(p, urx.flag == 0);
+  struct signal *urx = (struct signal *)u;
+
+  if ( urx->flag != 0xff ) {
+    PT_WAIT_UNTIL(p, (urx->flag == 0 || timer_expired(&urx->time)));
   }
 
-  urx.size = 0;
+  urx->size = 0;
 
   printf("UART2_URXCON =%d\n", *UART2_URXCON);
 
   while(*UART2_URXCON > 0) {
-
-  bcopy(UART2_UDATA, &uip_appdata[urx.size++], 1);
-
+    bcopy(UART2_UDATA, &uip_appdata[urx->size++], 1);
   }
 
-  urx.flag = 1;
-
-
-  //urxbuf_step = &urxbuf;
-
-    //U2_GET_LOOP_DEBUG(urxbuf);
-
-    /*for(urxbuf_mask = 0; *UART2_URXCON != 0; urxbuf_mask++) {
-
-      *urxbuf_step = *UART2_UDATA;
-      U2_DBG_RX_DATA(urxbuf);
-      urxbuf_step++;
-
-    }*/
-
-  //PT_SEM_SIGNAL(p, &urxbuf_data);
+  urx->flag = 1;
 
   PT_END(p);
 }
 
 /*---------------------------------------------------------------------------*/
 static
-PT_THREAD(TCP_send(struct psock *p)) //, volatile process_event_t *ev, volatile data_buffer_t *buf))
+PT_THREAD(TCP_send(struct psock *p, void *u))
 {
   PSOCK_BEGIN(p);
 
+  struct signal *urx = (struct signal *) u;
+
   while(1) {
 
-    PT_WAIT_UNTIL(&((p)->pt), urx.flag == 1);
+    PT_WAIT_UNTIL(&((p)->pt), urx->flag == 1);
 
     printf("\nurx.size=%d\n", URX_proc(&urx));
 
     PSOCK_GENERATOR_SEND(p, URX_proc, &urx);
 
-    urx.flag = 0;
+    timer_reset(&urx->time);
+    urx->flag = 0;
 
   }
   
@@ -154,12 +143,17 @@ PT_THREAD(TCP_send(struct psock *p)) //, volatile process_event_t *ev, volatile 
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(Talker, ev, data)
 {
-  PROCESS_POLLHANDLER(URX_fill(&URX_thread));
+  static struct signal *urx = (struct signal *) &RX;
+
+  PROCESS_POLLHANDLER(URX_fill(&URX_thread, &urx));
   PROCESS_BEGIN();
+
 
   midi_uart_init();
 
-  urx.flag = 0xff;
+  urx->flag = 0xff;
+
+  timer_set(&urx->time, CLOCK_SECOND * 5);
 
   /* Is it needed: PT_INIT(&URX_thread); ? */
 
@@ -180,11 +174,11 @@ PROCESS_THREAD(Talker, ev, data)
           //PROCESS_WAIT_EVENT_UNTIL(ev == tcpip_event);
 	  PROCESS_WAIT_EVENT();
 
-	  if (ev == tcpip_event) TCP_send(&TCP_thread);
+	  if (ev == tcpip_event) TCP_send(&TCP_thread, &urx);
 	  
         }
       }
-    } else { urx.flag = 0xff; }
+    } else { urx->flag = 0xff; timer_reset(&urx->time); }
   }
 
   PROCESS_END();
