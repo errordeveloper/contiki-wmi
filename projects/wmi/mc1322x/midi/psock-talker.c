@@ -11,7 +11,7 @@
 #include "net/uip-udp-packet.h"
 #include "sys/ctimer.h"
 
-typedef uint32_t data_buffer_t,
+typedef uint8_t data_buffer_t,
 	*pb_data_t, pb_size_t;
 
 #include "sys/pb.h"
