@@ -40,17 +40,21 @@ static struct psock TCP_thread;
 static struct pt    URX_thread;
 
 struct signal {
-  struct timer time;
-  unsigned short size;
-  unsigned short flag;
+  	struct timer	time;
+  	unsigned short	size;
+  	unsigned short	flag;
+
+//static struct psock sender; // TCP_thread
+//static struct pt    worker; // URX_thread
+
 };
 
 static unsigned short
-URX_proc(void *u)
+URX_proc(void *x)
 {
-  struct signal *urx = (struct signal *) u;
+  //struct signal *urx = (struct signal *) u;
 
-  return (unsigned short) &(urx)->size;
+  return ((struct signal *)x)->size;
 }
 
 
@@ -88,7 +92,7 @@ PT_THREAD(URX_fill(struct pt *p)) //, void *u))
   }
 
   urx->flag = 1;
-  P(); printf("\tf=%d\n", urx->flag);
+  //P(); printf("\tf=%d\n", urx->flag);
 
   PT_END(p);
 }
@@ -106,9 +110,9 @@ PT_THREAD(TCP_send(struct psock *p)) //, void *u))
     P(); printf("\tf=%d\n", urx->flag);
     PT_WAIT_UNTIL(&((p)->pt), urx->flag == 1);
 
-    printf("\ns=%d\n", URX_proc(NULL));
+    printf("\ns=%d\n", URX_proc(urx));
 
-    PSOCK_GENERATOR_SEND(p, URX_proc, NULL);
+    PSOCK_GENERATOR_SEND(p, URX_proc, urx);
 
     timer_reset(&urx->time);
     urx->flag = 0;
@@ -180,7 +184,7 @@ PROCESS_THREAD(Talker, ev, data)
 	  
         }
       }
-    } else { urx->flag = 0xff; timer_reset(&urx->time); }
+    } else { urx->flag = 0xff; timer_reset(&urx->time); printf("skip!\n"); }
   }
 
   PROCESS_END();
