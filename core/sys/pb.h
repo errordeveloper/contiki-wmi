@@ -83,7 +83,9 @@ typedef long int *pb_data_t;
 #endif
 #endif
 
+#if 0
 typedef unsigned short int pb_size_t;
+#endif
 
 // volatile /* ? */
 struct pb_path_t {

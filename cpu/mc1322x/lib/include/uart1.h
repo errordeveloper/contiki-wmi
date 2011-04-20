@@ -131,6 +131,8 @@ enum {
 #define U_RXI_ON	( 0 << RX_READY_MASK )	// default: enabled=0
 #define U_RXI_OFF	( 1 << RX_READY_MASK )	//           masked=1
 
+#define U_TEST		( 1 << LOOPBACK_TEST )
+
 #ifndef U1_ENABLE_DEFAULT
 #  define U1_ENABLE_DEFAULT UART_ON
 # else
@@ -220,7 +222,7 @@ extern void uart2_rxi_handler(void)  __attribute__((weak));
 
 /* This can be done a bit better with switch() */
 #define U2_DBG_RX_DATA(x) x##_test = *UART2_USTAT; \
-		  printf(":%i (Err: ", *x##_step); \
+		  printf(":%u (Err: ", *x##_step); \
 		  if(x##_test == 0x80) { printf("N"); } else { \
 	  if(bit_is_set(x##_test, START_BIT_ERROR))	{ printf("F"); } \
 	  if(bit_is_set(x##_test, STOP_BIT_ERROR))	{ printf("S"); } \

@@ -11,7 +11,8 @@
 #include "net/uip-udp-packet.h"
 #include "sys/ctimer.h"
 
-typedef char data_buffer_t, *pb_data_t;
+typedef uint32_t data_buffer_t,
+	*pb_data_t, pb_size_t;
 
 #include "sys/pb.h"
 
@@ -38,7 +39,6 @@ static struct pt    URX_thread;
 
 static struct pb_path_t urx;
 
-// may be it could go as struct with pt_sem ?
 static uint8_t urxbuf_mask, urxbuf_test;
 
 PROCESS(Talker, "MIDI Talker");
@@ -47,11 +47,11 @@ U2_RXI_POLL_PROCESS(&Talker);
 
 /*---------------------------------------------------------------------------*/
 
-static data_buffer_t tcpbuf[10];
-	//urxbuf[32],
-	//*urxbuf_step,
-	//utxbuf[32],
-	//*utxbuf_step;
+static data_buffer_t tcpbuf[2],
+	urxbuf[32],
+	*urxbuf_step,
+	utxbuf[32],
+	*utxbuf_step;
 
 static data_buffer_t *uip_appdata_step, uip_appdata_test;
 
@@ -66,25 +66,33 @@ PT_THREAD(URX_fill(struct pt *p))
 {
   PT_BEGIN(p);
 
-  uip_appdata_step = &uip_appdata;
+  urxbuf_step = (data_buffer_t*)&urxbuf;
 
   //PB_WAIT(p, &urx, PB_CALL, DONE);
     //U2_GET_LOOP_DEBUG(urxbuf);
 
-    for(urxbuf_mask = 0; *UART2_URXCON != 0; urxbuf_mask++) {
 
-      *uip_appdata_step = *UART2_UDATA;
-      U2_DBG_RX_DATA(uip_appdata);
-      uip_appdata_step++;
+    //static uint8_t l = 0xff;
+    printf("\n");
+    do {
 
-    }
+      printf("UART2_URXCON =%d\n", *UART2_URXCON);
+
+      *urxbuf_step = *UART2_UDATA;
+      //*urxbuf_step =  0xf0;
+      U2_DBG_RX_DATA(urxbuf);
+      urxbuf_step++;
+
+    } while(*UART2_URXCON > 0);
 
   if((PB_CALL(&urx) != PB_CALL_ZERO) 
   && (PB_FLAG(&urx) != PB_FLAG_FREE)) {
     PB_WAIT(p, &urx, PB_CALL, DONE);
   }
 
-  PB_SEND(p, &urx, &uip_appdata, urxbuf_mask);
+  PB_SEND(p, &urx, &urxbuf,
+	((pb_size_t*)urxbuf_step
+	  - (pb_size_t*)&urxbuf));
 
   PT_END(p);
 }
@@ -96,7 +104,7 @@ URX_proc(void *data)
 
   printf("\nurxbuf_mask=%d", PB_SIZE(d));
 
-  //memcpy(uip_appdata, *PB_DATA(d), PB_SIZE(d));
+  bcopy(&PB_DATA(d), &uip_appdata, PB_SIZE(d));
 
   return PB_SIZE(d);
 }
@@ -111,6 +119,8 @@ PT_THREAD(TCP_send(struct psock *p)) //, volatile process_event_t *ev, volatile 
 
     PB_WAIT(&((p)->pt), &urx, PB_CALL, DATA);
     PB_LOCK(&urx);
+
+    *UART2_UDATA = 0xff;
 
     //PSOCK_SEND(p, PB_DATA(&urx), PB_SIZE(&urx));
     PSOCK_GENERATOR_SEND(p, URX_proc, &urx);
@@ -159,9 +169,10 @@ PROCESS_THREAD(Talker, ev, data)
 
   midi_uart_init();
 
+  
   /* Is it needed: PT_INIT(&URX_thread); ? */
 
-  tcp_listen(UIP_HTONS(1010));
+  tcp_listen(UIP_HTONS(2020));
 
   while(1) {
 
