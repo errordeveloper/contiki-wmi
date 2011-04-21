@@ -22,8 +22,6 @@
 
 #include "contiki-net.h"
 
-#define MIDI_DATA_SIZE 0 // 1024
-
 enum {
 
   SKIP = 0xff,
@@ -38,9 +36,9 @@ enum {
 
 #define P() printf("line: %d", __LINE__)
 
-#define STAT 1
+#define STAT 0
 
-/* #define INFO 0 */
+#define INFO 0
 
 
 #   if defined(INFO)
@@ -73,8 +71,10 @@ struct signal {
   	struct timer	time;
   	unsigned short	size;
   	unsigned short	flag;
-#ifdef STAT
+#if STAT
 	unsigned long	stat;
+	unsigned long	sent;
+	unsigned long	lost
 #endif
 
 //static struct psock sender; // TCP_thread
@@ -82,28 +82,68 @@ struct signal {
 
 };
 
-#ifdef STAT
+#if STAT
 #define incr_stat() do { \
 	urx->stat += urx->size; \
-	printf("\n\t++stat= %d\n", urx->stat); \
+	printf("\n%lu\t++stat= %d\n", clock_time(), urx->stat); \
 } while(0)
 
 #define decr_stat() do { \
 	urx->stat -= urx->size; \
-	printf("\n\t--stat= %d\n", urx->stat); \
+	printf("\n%lu\t--stat= %d\n", clock_time(), urx->stat); \
 } while(0)
 
 #define zero_stat() do { \
 	urx->stat = 0; \
-	printf("\n\t..stat= %d\n", urx->stat); \
+	printf("\n%lu\t..stat= %d\n", clock_time(), urx->stat); \
+} while(0)
+
+#define norm_stat() do { \
+	urx->stat = urx->size; \
+	printf("\n%lu\t**stat= %d\n", clock_time(), urx->stat); \
+} while(0)
+
+
+#define stat_lost() do { \
+	urx->lost += urx->size; \
+	printf("\n%lu\t\t++lost= %d\n", clock_time(), urx->lost); \
+} while(0)
+
+#define stat_sent() do { \
+	urx->sent += urx->size; \
+	printf("\n%lu\t\t++sent= %d\n", clock_time(), urx->sent); \
+} while(0)
+
+#define zero_sent() do { \
+	urx->sent = 0; \
+	printf("\n%lu\t..sent= %d\n", clock_time(), urx->sent); \
+} while(0)
+
+#define zero_lost() do { \
+	urx->lost = 0; \
+	printf("\n%lu\t..lost= %d\n", clock_time(), urx->lost); \
+} while(0)
+
+#define stat_init() do { \
+	zero_stat(); \
+	zero_sent(); \
+	zero_lost(); \
 } while(0)
 
 #else
-#  define zero_stat()
 #  define incr_stat()
 #  define decr_stat()
+#  define zero_stat()
+#  define norm_stat()
+#  define stat_init()
+#  define stat_sent()
+#  define stat_lost()
 #endif
 
+// Buffer Length (has to be defined)
+#define BL 32
+// Queue Length (set to zero to disable)
+#define QL (BL/2)
 
 /* This function is needed for PSOCK_GENERATOR_SEND() */
 static unsigned short
@@ -122,7 +162,7 @@ U2_RXI_POLL_PROCESS(&Talker);
 volatile struct signal RX;
 static struct signal *urx = (struct signal *) &RX;
 
-static data_buffer_t tcpbuf[10];
+static data_buffer_t tcpbuf[BL];
 
 /*---------------------------------------------------------------------------*/
 static
@@ -136,7 +176,21 @@ PT_THREAD(URX_fill(struct pt *p))
     info2("okay!\n");
   }
 
+#if QL
+  if (urx->size < QL) {
+    urx->size += urx->size;
+    norm_stat();
+  } else {
+    stat_lost();
+    info2("drop!\n");
+    urx->size = 0;
+  }
+#else
+  // may be no need for #if/#else
+  // compiler can figure this ?
+  stat_lost();
   urx->size = 0;
+#endif
 
   info1("URXCON=%d\n", *UART2_URXCON);
 
@@ -145,16 +199,16 @@ PT_THREAD(URX_fill(struct pt *p))
     info1("f=%d; s=%d;\n", urx->flag, urx->size);
   }
 
-  info0("\n<< %d", urx->size);
+  info0("\n<<+ %d", urx->size);
 
   incr_stat();
-
-  urx->flag = 1;
-
+  
   if(uip_conn != NULL) {
     info2("poll!\n");
     tcpip_poll_tcp(uip_conn);
-  } else { printf("null!\n"); }
+  } else { info2("null!\n"); }
+
+  urx->flag = 1;
 
   PT_END(p);
 }
@@ -169,19 +223,20 @@ PT_THREAD(TCP_send(struct psock *p))
 
     PT_WAIT_UNTIL(&((p)->pt), urx->flag == 1);
 
-    info0("\n>> %d", urx->size);
+    info0("\n+>> %d", urx->size);
 
     info1("\ns=%d\n", URX_proc(urx));
 
-    info2("MSS=%d\n", uip_mss());
-
+    // info2("MSS=%d\n", uip_mss());
 
     PSOCK_GENERATOR_SEND(p, URX_proc, urx);
 
     timer_reset(&urx->time);
 
     decr_stat();
+    stat_sent();
 
+    urx->size = 0;
     urx->flag = 0;
 
   }
@@ -220,17 +275,17 @@ PROCESS_THREAD(Talker, ev, data)
   PROCESS_POLLHANDLER(URX_fill(&URX_thread));
   PROCESS_BEGIN();
 
-  zero_stat();
+  stat_init();
 
   midi_uart_init();
   urx->flag = SKIP;
-  timer_set(&urx->time, CLOCK_SECOND * 15);
+  timer_set(&urx->time, CLOCK_SECOND * 120);
 
   /* Is it needed: PT_INIT(&URX_thread); ? */
 
   tcp_listen(UIP_HTONS(2020));
 
-  info2("Initial MSS=%d\n", uip_initialmss());
+  // info2("Initial MSS=%d\n", uip_initialmss());
 
   while(1) {
 
