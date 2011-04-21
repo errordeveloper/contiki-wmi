@@ -151,11 +151,10 @@ PT_THREAD(URX_fill(struct pt *p))
 
   urx->flag = 1;
 
-  //if(uip_connected()) {
-    printf("SHOULD POLL!\n");
-    if(uip_conn == NULL) printf("IS NULL!");
+  if(uip_conn != NULL) {
+    info2("poll!\n");
     tcpip_poll_tcp(uip_conn);
-  //}
+  } else { printf("null!\n"); }
 
   PT_END(p);
 }
