@@ -215,16 +215,16 @@
 #define UIP_CONF_LLH_LEN         0
 #define UIP_CONF_RECEIVE_WINDOW  48
 #define UIP_CONF_TCP_MSS         48
-#define UIP_CONF_MAX_CONNECTIONS 4
-#define UIP_CONF_MAX_LISTENPORTS 8
-#define UIP_CONF_UDP_CONNS       12
+#define UIP_CONF_MAX_CONNECTIONS 2
+#define UIP_CONF_MAX_LISTENPORTS 2
+#define UIP_CONF_UDP_CONNS       2
 #define UIP_CONF_FWCACHE_SIZE    30
 #define UIP_CONF_BROADCAST       1
 #define UIP_ARCH_IPCHKSUM        1
 #define UIP_CONF_UDP             1
 #define UIP_CONF_UDP_CHECKSUMS   1
 #define UIP_CONF_PINGADDRCONF    0
-#define UIP_CONF_LOGGING         0
+#define UIP_LOGGING              0
 
 #define UIP_CONF_TCP_SPLIT       0
 
