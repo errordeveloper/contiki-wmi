@@ -11,14 +11,15 @@
 #include "net/uip-udp-packet.h"
 #include "sys/ctimer.h"
 
-#include "sys/pt-sem.h"
-
 #include <string.h>
 
 #include <stdio.h>
 
 #include "uart2-midi.h"
 
+#define STAT 0
+#define INFO 0
+#include "debug.h"
 
 #include "contiki-net.h"
 
@@ -29,36 +30,6 @@ enum {
 };
 
 #define data_buffer_t char
-
-/* Won't work for some reason!
- * #define URX_proc(x) (urx->size)
-*/
-
-#define P() printf("line: %d", __LINE__)
-
-#define STAT 0
-
-#define INFO 0
-
-
-#   if defined(INFO)
-#   define info0(...) printf(__VA_ARGS__)
-#   else
-#   define info0(...)
-#   endif
-
-#   if INFO >= 1
-#   define info1(...) printf(__VA_ARGS__)
-#   else
-#   define info1(...)
-#   endif
-
-#   if INFO >= 2
-#   define info2(...) printf(__VA_ARGS__)
-#   else
-#   define info2(...)
-#   endif
-
 
 /*
  * To be able to handle more than one connection at a time,
@@ -82,63 +53,6 @@ struct signal {
 
 };
 
-#if STAT
-#define incr_stat() do { \
-	urx->stat += urx->size; \
-	printf("\n%lu\t++stat= %d\n", clock_time(), urx->stat); \
-} while(0)
-
-#define decr_stat() do { \
-	urx->stat -= urx->size; \
-	printf("\n%lu\t--stat= %d\n", clock_time(), urx->stat); \
-} while(0)
-
-#define zero_stat() do { \
-	urx->stat = 0; \
-	printf("\n%lu\t..stat= %d\n", clock_time(), urx->stat); \
-} while(0)
-
-#define norm_stat() do { \
-	urx->stat = urx->size; \
-	printf("\n%lu\t**stat= %d\n", clock_time(), urx->stat); \
-} while(0)
-
-
-#define stat_lost() do { \
-	urx->lost += urx->size; \
-	printf("\n%lu\t\t++lost= %d\n", clock_time(), urx->lost); \
-} while(0)
-
-#define stat_sent() do { \
-	urx->sent += urx->size; \
-	printf("\n%lu\t\t++sent= %d\n", clock_time(), urx->sent); \
-} while(0)
-
-#define zero_sent() do { \
-	urx->sent = 0; \
-	printf("\n%lu\t..sent= %d\n", clock_time(), urx->sent); \
-} while(0)
-
-#define zero_lost() do { \
-	urx->lost = 0; \
-	printf("\n%lu\t..lost= %d\n", clock_time(), urx->lost); \
-} while(0)
-
-#define stat_init() do { \
-	zero_stat(); \
-	zero_sent(); \
-	zero_lost(); \
-} while(0)
-
-#else
-#  define incr_stat()
-#  define decr_stat()
-#  define zero_stat()
-#  define norm_stat()
-#  define stat_init()
-#  define stat_sent()
-#  define stat_lost()
-#endif
 
 // Buffer Length (has to be defined)
 #define BL 32
@@ -179,16 +93,16 @@ PT_THREAD(URX_fill(struct pt *p))
 #if QL
   if (urx->size < QL) {
     urx->size += urx->size;
-    norm_stat();
+    norm_stat(urx);
   } else {
-    stat_lost();
+    stat_lost(uxr);
     info2("drop!\n");
     urx->size = 0;
   }
 #else
   // may be no need for #if/#else
   // compiler can figure this ?
-  stat_lost();
+  stat_lost(urx);
   urx->size = 0;
 #endif
 
@@ -201,7 +115,7 @@ PT_THREAD(URX_fill(struct pt *p))
 
   info0("\n<<+ %d", urx->size);
 
-  incr_stat();
+  incr_stat(urx);
   
   if(uip_conn != NULL) {
     info2("poll!\n");
@@ -221,7 +135,7 @@ PT_THREAD(TCP_send(struct psock *p))
 
   while(1) {
 
-    PT_WAIT_UNTIL(&((p)->pt), urx->flag == 1);
+    PSOCK_WAIT_UNTIL(p, (urx->flag == 1));
 
     info0("\n+>> %d", urx->size);
 
@@ -233,35 +147,14 @@ PT_THREAD(TCP_send(struct psock *p))
 
     timer_reset(&urx->time);
 
-    decr_stat();
-    stat_sent();
+    decr_stat(urx);
+    stat_sent(urx);
 
     urx->size = 0;
     urx->flag = 0;
 
   }
   
-  /*
-   * Next, we use the PSOCK_READTO() function to read incoming data
-   * from the TCP connection until we get a newline character. The
-   * number of bytes that we actually keep is dependant of the length
-   * of the input buffer that we use. Since we only have a 10 byte
-   * buffer here (the buffer[] array), we can only remember the first
-   * 10 bytes received. The rest of the line up to the newline simply
-   * is discarded.
-   */
-   //PSOCK_READTO(p, '\n');
-  
-  /*
-   * And we send back the contents of the buffer. The PSOCK_DATALEN()
-   * function provides us with the length of the data that we've
-   * received. Note that this length will not be longer than the input
-   * buffer we're using.
-   */
-   //PSOCK_SEND_STR(p, "Got the following data: ");
-   //PSOCK_SEND(p, tcpbuf, PSOCK_DATALEN(p));
-   //PSOCK_SEND_STR(p, "Good bye!\r\n");
-
   PSOCK_CLOSE(p);
 
   PSOCK_END(p);
@@ -275,7 +168,7 @@ PROCESS_THREAD(Talker, ev, data)
   PROCESS_POLLHANDLER(URX_fill(&URX_thread));
   PROCESS_BEGIN();
 
-  stat_init();
+  stat_init(urx);
 
   midi_uart_init();
   urx->flag = SKIP;
@@ -284,8 +177,6 @@ PROCESS_THREAD(Talker, ev, data)
   /* Is it needed: PT_INIT(&URX_thread); ? */
 
   tcp_listen(UIP_HTONS(2020));
-
-  // info2("Initial MSS=%d\n", uip_initialmss());
 
   while(1) {
 
@@ -306,7 +197,7 @@ PROCESS_THREAD(Talker, ev, data)
 	  
         }
       }
-    } else { urx->flag = SKIP; zero_stat(); timer_reset(&urx->time); info2("skip!\n"); }
+    } else { urx->flag = SKIP; zero_stat(urx); timer_reset(&urx->time); info2("skip!\n"); }
   }
 
   PROCESS_END();

@@ -248,7 +248,14 @@ extern void uart2_rxi_handler(void)  __attribute__((weak));
 		*x##_step = *UART2_UDATA;			\
 		U2_DBG_RX_DATA(x); x##_step++; }
 
+/* Only one of each may be used at a time
+ * can do something like this, if needed:
+ * U2_TXI_CALL(my->flag = POLLED; process_poll(x)) */
+
 #define U2_TXI_POLL_PROCESS(x) void uart2_txi_handler(void){ process_poll(x); }
+#define U2_TXI_CALL(...) void uart2_txi_handler(void){ __VA_ARGS__; }
+
 #define U2_RXI_POLL_PROCESS(x) void uart2_rxi_handler(void){ process_poll(x); }
+#define U2_RXI_CALL(...) void uart2_rxi_handler(void){ __VA_ARGS__; }
 
 #endif

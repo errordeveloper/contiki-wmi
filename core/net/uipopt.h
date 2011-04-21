@@ -351,7 +351,7 @@
  *
  * \hideinitializer
  */
-#define UIP_URGDATA      0
+#define UIP_URGDATA     0
 
 /**
  * The initial retransmission timeout counted in timer pulses.
@@ -375,7 +375,7 @@
  *
  * This should not need to be changed.
  */
-#define UIP_MAXSYNRTX      5
+#define UIP_MAXSYNRTX   5
 
 /**
  * The TCP maximum segment size.

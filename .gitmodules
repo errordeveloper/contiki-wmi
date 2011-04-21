@@ -1,3 +1,6 @@
 [submodule "/home/110101/uni/ct3p60n/code/contiki-wmi.git/projects/wmi/lib/midi"]
 	path = /home/110101/uni/ct3p60n/code/contiki-wmi.git/projects/wmi/lib/midi
 	url = git://github.com/x37v/avr-midi
+[submodule "projects/wmi/doc"]
+	path = projects/wmi/doc
+	url = git@github.com:errordeveloper/wmi-doc-final-report.git

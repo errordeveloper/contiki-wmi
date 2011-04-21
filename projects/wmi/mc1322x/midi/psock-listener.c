@@ -11,108 +11,74 @@
 #include "net/uip-udp-packet.h"
 #include "sys/ctimer.h"
 
-#include "sys/pt-sem.h"
-
 #include <string.h>
 
 #include <stdio.h>
 
 #include "uart2-midi.h"
 
+#define STAT 0
+#define INFO 0
+#include "debug.h"
 
 #include "contiki-net.h"
 
-#define MIDI_DATA_SIZE 0 // 1024
 
 #define data_buffer_t char
-
-/* #define P() printf("line: %d\n", __LINE__) */
 
 /*
  * To be able to handle more than one connection at a time,
  * each parallell connection needs its own protosocket.
  */
 static struct psock TCP_thread;
-static struct pt    URX_thread;
+static struct pt    UTX_thread;
 
-static struct pt_sem utxbuf_data;
-// may be it could go as struct with pt_sem ?
-static uint8_t utxbuf_mask, utxbuf_test;
+struct signal {
+	struct timer	time;
+	unsigned short	size;
+	unsigned short	flag;
+#if STAT
+	unsigned long	stat;
+	unsigned long	sent;
+	unsigned long	lost
+#endif
+};
 
 PROCESS(Listener, "MIDI Listener");
 AUTOSTART_PROCESSES(&Listener);
-U2_TXI_POLL_PROCESS(&Listener);
+U2_TXI_CALL(utx->flag = 1);
 
 /*---------------------------------------------------------------------------*/
 
-static data_buffer_t tcpbuf[10], urxbuf[32], utxbuf[32];
+volatile struct signal TX;
+static struct signal *utx = (struct signal *) &TX;
+
+static data_buffer_t tcpbuf[BL];
 
 /*---------------------------------------------------------------------------*/
 static
-PT_THREAD(URX_fill(struct pt *p))
+PT_THREAD(UTX_fill(struct pt *p))
 {
 
   PT_BEGIN(p);
 
-  static data_buffer_t *utxbuf_step = &utxbuf;
-
-    //U2_GET_LOOP_DEBUG(utxbuf);
-
-    for(utxbuf_mask = 0; *UART2_URXCON != 0; utxbuf_mask++) {
-
-      *utxbuf_step = *UART2_UDATA;
-      U2_DBG_RX_DATA(utxbuf);
-      utxbuf_step++;
-
-    }
-
-  PT_SEM_SIGNAL(p, &utxbuf_data);
-
   PT_END(p);
 }
 
-//static void URX_fill(void) { U2_GET_LOOP_DEBUG(utxbuf); return; }
-
 /*---------------------------------------------------------------------------*/
 static
-PT_THREAD(TCP_send(struct psock *p)) //, volatile process_event_t *ev, volatile data_buffer_t *buf))
+PT_THREAD(TCP_send(struct psock *p))
 {
   PSOCK_BEGIN(p);
 
   while(1) {
 
-    PT_SEM_WAIT(&((p)->pt), &utxbuf_data);
+    PSOCK_WAIT_UNTIL(p, (utx->flag = 0));
 
-    //PSOCK_SEND(p, utxbuf, 32);
-    // need to test what's the value of semaphore
-    printf("\nutxbuf_mask=%d\n", utxbuf_mask);
-
-    // TODO: send the data instead!
-    PSOCK_SEND_STR(p, "UART2 data is ready.");
+    //PSOCK_READTO(p, '\n');
 
   }
   
-  /*
-   * Next, we use the PSOCK_READTO() function to read incoming data
-   * from the TCP connection until we get a newline character. The
-   * number of bytes that we actually keep is dependant of the length
-   * of the input buffer that we use. Since we only have a 10 byte
-   * buffer here (the buffer[] array), we can only remember the first
-   * 10 bytes received. The rest of the line up to the newline simply
-   * is discarded.
-   */
-   //PSOCK_READTO(p, '\n');
-  
-  /*
-   * And we send back the contents of the buffer. The PSOCK_DATALEN()
-   * function provides us with the length of the data that we've
-   * received. Note that this length will not be longer than the input
-   * buffer we're using.
-   */
-   //PSOCK_SEND_STR(p, "Got the following data: ");
-   //PSOCK_SEND(p, tcpbuf, PSOCK_DATALEN(p));
-  PSOCK_SEND_STR(p, "Good bye!\r\n");
-
   PSOCK_CLOSE(p);
 
   PSOCK_END(p);
@@ -122,12 +88,12 @@ PT_THREAD(TCP_send(struct psock *p)) //, volatile process_event_t *ev, volatile 
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(Listener, ev, data)
 {
-  PROCESS_POLLHANDLER(URX_fill(&UTX_thread));
   PROCESS_BEGIN();
 
-  midi_uart_init();
+  stat_init(utx);
 
-  PT_SEM_INIT(&utxbuf_data, 0);
+  midi_uart_init();
+  timer_set(&utx->time, CLOCK_SECOND * 120);
 
   /* Is it needed: PT_INIT(&URX_thread); ? */
 
