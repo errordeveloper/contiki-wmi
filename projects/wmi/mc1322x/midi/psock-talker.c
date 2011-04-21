@@ -85,17 +85,17 @@ struct signal {
 #ifdef STAT
 #define incr_stat() do { \
 	urx->stat += urx->size; \
-	printf("\n\t++stat= %d", urx->stat); \
+	printf("\n\t++stat= %d\n", urx->stat); \
 } while(0)
 
 #define decr_stat() do { \
 	urx->stat -= urx->size; \
-	printf("\n\t--stat= %d", urx->stat); \
+	printf("\n\t--stat= %d\n", urx->stat); \
 } while(0)
 
 #define zero_stat() do { \
 	urx->stat = 0; \
-	printf("\n\t..stat= %d", urx->stat); \
+	printf("\n\t..stat= %d\n", urx->stat); \
 } while(0)
 
 #else
@@ -150,6 +150,12 @@ PT_THREAD(URX_fill(struct pt *p))
   incr_stat();
 
   urx->flag = 1;
+
+  //if(uip_connected()) {
+    printf("SHOULD POLL!\n");
+    if(uip_conn == NULL) printf("IS NULL!");
+    tcpip_poll_tcp(uip_conn);
+  //}
 
   PT_END(p);
 }
