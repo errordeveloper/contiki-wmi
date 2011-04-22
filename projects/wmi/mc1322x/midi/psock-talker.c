@@ -18,7 +18,7 @@
 #include "uart2-midi.h"
 
 #define STAT 0
-#define INFO 0
+#define INFO 2
 #include "debug.h"
 
 #include "contiki-net.h"
@@ -38,6 +38,10 @@ enum {
 static struct psock TCP_thread;
 static struct pt    URX_thread;
 
+/* This a nice struct that
+ * may need to be changed,
+ * the timer is not used.
+*/
 struct signal {
   	struct timer	time;
   	unsigned short	size;
@@ -86,7 +90,7 @@ PT_THREAD(URX_fill(struct pt *p))
   PT_BEGIN(p);
 
   if (urx->flag != SKIP) {
-    PT_WAIT_UNTIL(p, (urx->flag == 0 || timer_expired(&urx->time)));
+    PT_WAIT_UNTIL(p, (urx->flag == 0));
     info2("okay!\n");
   }
 
@@ -113,7 +117,7 @@ PT_THREAD(URX_fill(struct pt *p))
     info1("f=%d; s=%d;\n", urx->flag, urx->size);
   }
 
-  info0("\n<<+ %d", urx->size);
+  info0("<<+ %d\n", urx->size);
 
   incr_stat(urx);
   
@@ -137,9 +141,9 @@ PT_THREAD(TCP_send(struct psock *p))
 
     PSOCK_WAIT_UNTIL(p, (urx->flag == 1));
 
-    info0("\n+>> %d", urx->size);
+    info0("+>> %d\n", urx->size);
 
-    info1("\ns=%d\n", URX_proc(urx));
+    info1("s=%d\n", URX_proc(urx));
 
     // info2("MSS=%d\n", uip_mss());
 
