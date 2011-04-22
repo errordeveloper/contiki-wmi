@@ -17,8 +17,8 @@
 
 #include "uart2-midi.h"
 
-#define STAT 0
-#define INFO 2
+#define STAT 1
+#define INFO -1
 #include "debug.h"
 
 #include "contiki-net.h"
@@ -99,7 +99,7 @@ PT_THREAD(URX_fill(struct pt *p))
     urx->size += urx->size;
     norm_stat(urx);
   } else {
-    stat_lost(uxr);
+    stat_lost(urx);
     info2("drop!\n");
     urx->size = 0;
   }
