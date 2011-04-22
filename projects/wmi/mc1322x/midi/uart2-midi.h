@@ -15,6 +15,7 @@
  * more accurate.
 */
 
+#include "isr.h"
 #include "uart1.h"
 #define MIDI_UART2_INC 103
 #define MIDI_UART2_MOD MOD

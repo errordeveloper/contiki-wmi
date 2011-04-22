@@ -2,6 +2,9 @@
  * debugger is not available */
 #define P() printf("line: %d", __LINE__)
 
+/* Breaker function for gdb */
+volatile void dbg(void);
+
 /* To desable INFO, set it to -1 */
 
 #   if INFO >= 0

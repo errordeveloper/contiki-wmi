@@ -26,6 +26,8 @@
 enum {
 
   SKIP = 0xff,
+  SEND = 1,
+  SENT = 0,
 
 };
 
@@ -74,6 +76,7 @@ URX_proc(void *x)
 PROCESS(Talker, "MIDI Talker");
 AUTOSTART_PROCESSES(&Talker);
 U2_RXI_POLL_PROCESS(&Talker);
+U2_TXI_CALL(U2_RX_ONLY());
 
 /*---------------------------------------------------------------------------*/
 
@@ -89,8 +92,10 @@ PT_THREAD(URX_fill(struct pt *p))
 
   PT_BEGIN(p);
 
+  //disable_irq(UART2);
+
   if (urx->flag != SKIP) {
-    PT_WAIT_UNTIL(p, (urx->flag == 0));
+    PT_WAIT_UNTIL(p, (urx->flag == SENT));
     info2("okay!\n");
   }
 
@@ -120,13 +125,14 @@ PT_THREAD(URX_fill(struct pt *p))
   info0("<<+ %d\n", urx->size);
 
   incr_stat(urx);
+
+  //enable_irq(UART2);
   
   if(uip_conn != NULL) {
     info2("poll!\n");
+    urx->flag = SEND;
     tcpip_poll_tcp(uip_conn);
   } else { info2("null!\n"); }
-
-  urx->flag = 1;
 
   PT_END(p);
 }
@@ -139,7 +145,7 @@ PT_THREAD(TCP_send(struct psock *p))
 
   while(1) {
 
-    PSOCK_WAIT_UNTIL(p, (urx->flag == 1));
+    PSOCK_WAIT_UNTIL(p, (urx->flag == SEND));
 
     info0("+>> %d\n", urx->size);
 
@@ -154,8 +160,8 @@ PT_THREAD(TCP_send(struct psock *p))
     decr_stat(urx);
     stat_sent(urx);
 
-    urx->size = 0;
-    urx->flag = 0;
+    urx->size = SENT;
+    urx->flag = SENT;
 
   }
   
@@ -175,6 +181,8 @@ PROCESS_THREAD(Talker, ev, data)
   stat_init(urx);
 
   midi_uart_init();
+
+
   urx->flag = SKIP;
   timer_set(&urx->time, CLOCK_SECOND * 120);
 
@@ -201,7 +209,11 @@ PROCESS_THREAD(Talker, ev, data)
 	  
         }
       }
-    } else { urx->flag = SKIP; zero_stat(urx); timer_reset(&urx->time); info2("skip!\n"); }
+    } else {
+             urx->flag = SKIP;
+	     zero_stat(urx);
+	     timer_reset(&urx->time);
+	     info2("skip!\n"); }
   }
 
   PROCESS_END();

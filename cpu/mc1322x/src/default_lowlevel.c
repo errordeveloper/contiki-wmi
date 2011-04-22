@@ -47,7 +47,7 @@ void default_vreg_init(void) {
 	*CRM_VREG_CNTL = 0x00000ff8; /* start the regulators */
 }
 
-void uart1_init(uint16_t inc, uint16_t mod, uint8_t samp) {
+void uart1_init(volatile uint16_t inc, volatile uint16_t mod, volatile uint8_t samp) {
 		
         /* UART must be disabled to set the baudrate */
 	*UART1_UCON = 0;
@@ -77,7 +77,7 @@ void uart1_init(uint16_t inc, uint16_t mod, uint8_t samp) {
 	enable_irq(UART1);
 }
 
-void uart2_init(uint16_t inc, uint16_t mod, uint8_t samp) {
+void uart2_init(volatile uint16_t inc, volatile uint16_t mod, volatile uint8_t samp) {
 		
 	/* UART must be disabled to set the baudrate */
 	*UART2_UCON = 0; // can used UART_OFF

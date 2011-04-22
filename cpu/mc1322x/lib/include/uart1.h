@@ -138,7 +138,7 @@ enum {
 #endif
 
 #ifndef U2_ENABLE_DEFAULT
-#  define U2_ENABLE_DEFAULT ( U_RX_ONLY | U_TXI_OFF )
+#  define U2_ENABLE_DEFAULT UART_ON
 # else
 #  warning "U2_ENABLE_DEFAULT is not default"
 #endif
@@ -217,6 +217,17 @@ uint8_t uart2_getc(void);
 extern void uart2_txi_handler(void)  __attribute__((weak));
 extern void uart2_rxi_handler(void)  __attribute__((weak));
 
+#define UART_MODE(x, m) do { \
+	disable_irq(UART##x); \
+	*UART##x##_UCON = (m);  \
+	enable_irq(UART##x);  \
+} while(0)
+
+#define U1_MODE(m) UART_MODE(1, m)
+#define U2_MODE(m) UART_MODE(2, m)
+
+#define U2_RX_ONLY() U2_MODE(( U_RX_ONLY | U_TXI_OFF ))
+#define U2_TX_ONLY() U2_MODE(( U_TX_ONLY | U_RXI_OFF ))
 
 /* This can be done a bit better with switch() */
 #define U2_DBG_RX_DATA(x) x##_test = *UART2_USTAT; \
