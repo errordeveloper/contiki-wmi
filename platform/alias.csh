@@ -16,8 +16,6 @@ else
   set w=`dirname $w[2]`/alias
 endif
 
-echo $w
-
 eval `awk '\
 	$1 !~ /^#/ { \
 	if ( $1 != "" && $2 != "" ) { \
