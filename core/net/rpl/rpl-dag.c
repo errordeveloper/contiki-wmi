@@ -142,7 +142,9 @@ remove_worst_parent(rpl_dag_t *dag, rpl_rank_t min_worst_rank)
 static int
 should_send_dao(rpl_dag_t *dag, rpl_dio_t *dio, rpl_parent_t *p)
 {
-  return dio->dtsn > p->dtsn && p == dag->preferred_parent;
+  /* if MOP is set to no downward routes no DAO should be sent */
+  if(dag->mop == RPL_MOP_NO_DOWNWARD_ROUTES) return 0;
+  return dio->dtsn != p->dtsn && p == dag->preferred_parent;
 }
 /************************************************************************/
 static int
@@ -189,8 +191,8 @@ rpl_set_root(uip_ipaddr_t *dag_id)
   dag->max_rankinc = DEFAULT_MAX_RANKINC;
   dag->min_hoprankinc = DEFAULT_MIN_HOPRANKINC;
 
-  dag->default_lifetime = DEFAULT_RPL_DEF_LIFETIME;
-  dag->lifetime_unit = DEFAULT_RPL_LIFETIME_UNIT;
+  dag->default_lifetime = RPL_DEFAULT_LIFETIME;
+  dag->lifetime_unit = RPL_DEFAULT_LIFETIME_UNIT;
 
   dag->rank = ROOT_RANK(dag);
 
@@ -236,11 +238,9 @@ rpl_set_default_route(rpl_dag_t *dag, uip_ipaddr_t *from)
     PRINTF("RPL: Adding default route through ");
     PRINT6ADDR(from);
     PRINTF("\n");
-    if(DEFAULT_ROUTE_LIFETIME == INFINITE_LIFETIME) {
-      dag->def_route = uip_ds6_defrt_add(from, 0);
-    } else {
-      dag->def_route = uip_ds6_defrt_add(from, DEFAULT_ROUTE_LIFETIME);
-    }
+    dag->def_route = uip_ds6_defrt_add(from,
+                                       RPL_LIFETIME(dag,
+                                                    dag->default_lifetime));
     if(dag->def_route == NULL) {
       return 0;
     }
@@ -340,19 +340,31 @@ rpl_select_parent(rpl_dag_t *dag)
 
   best = NULL;
   for(p = list_head(dag->parents); p != NULL; p = p->next) {
-    if(best == NULL) {
+    if(p->rank == INFINITE_RANK) {
+      /* ignore this neighbor */
+    } else if(best == NULL) {
       best = p;
     } else {
       best = dag->of->best_parent(best, p);
     }
   }
 
+  if(best == NULL) {
+    /* need to handle update of best... */
+    return NULL;
+  }
+
   if(dag->preferred_parent != best) {
+    PRINTF("RPL: Sending a No-Path DAO to old DAO parent\n");
+    dao_output(dag->preferred_parent, ZERO_LIFETIME);
+
     dag->preferred_parent = best; /* Cache the value. */
     dag->of->update_metric_container(dag);
     rpl_set_default_route(dag, &best->addr);
     /* The DAO parent set changed - schedule a DAO transmission. */
-    rpl_schedule_dao(dag);
+    if(dag->mop != RPL_MOP_NO_DOWNWARD_ROUTES) {
+      rpl_schedule_dao(dag);
+    }
     rpl_reset_dio_timer(dag, 1);
     PRINTF("RPL: New preferred parent, rank changed from %u to %u\n",
 	   (unsigned)dag->rank, dag->of->calculate_rank(best, 0));
@@ -366,7 +378,7 @@ rpl_select_parent(rpl_dag_t *dag)
     dag->min_rank = dag->rank;
   } else if(!acceptable_rank(dag, best->rank)) {
     /* Send a No-Path DAO to the soon-to-be-removed preferred parent. */
-    dao_output(p, ZERO_LIFETIME);
+    dao_output(best, ZERO_LIFETIME);
 
     remove_parents(dag, 0);
     return NULL;
@@ -638,7 +650,8 @@ rpl_process_parent_event(rpl_dag_t *dag, rpl_parent_t *p)
     rpl_reset_dio_timer(dag, 1);
   }
 
-  if(!acceptable_rank(dag, dag->of->calculate_rank(NULL, parent_rank))) {
+  if(parent_rank == INFINITE_RANK ||
+     !acceptable_rank(dag, dag->of->calculate_rank(NULL, parent_rank))) {
     /* The candidate parent is no longer valid: the rank increase resulting
        from the choice of it as a parent would be too high. */
     return 0;

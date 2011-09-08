@@ -34,7 +34,6 @@
 #define I2C_H
 
 #include <stdint.h>
-#include <stdio.h>
 #include "isr.h"
 #include "gpio.h"
 
@@ -80,10 +79,13 @@ void i2c_receiveinit( uint8_t slave_address, uint8_t byte_ctr, uint8_t *rx_buf);
 void i2c_transmitinit(uint8_t slave_address, uint8_t byte_ctr, uint8_t *tx_buf);
 
 
-
 #ifndef I2C_NON_BLOCKING
-uint8_t i2c_receive();
-void    i2c_transmit();
+#define I2C_NON_BLOCKING 1
+#endif
+
+#if I2C_NON_BLOCKING
+uint8_t i2c_receive(void);
+void    i2c_transmit(void);
 #endif
 
 // TODO: see if this is better fit in platform definition

@@ -58,7 +58,9 @@ static int value(int type) {
 }
 /*---------------------------------------------------------------------------*/
 static int status(int type) {
-	if (type == SENSORS_ACTIVE || type == SENSORS_READY) {
+	switch (type) {
+		case SENSORS_ACTIVE:
+		case SENSORS_READY:
 			return 1; // fix?
 			break;
 	}
@@ -66,17 +68,20 @@ static int status(int type) {
 }
 /*---------------------------------------------------------------------------*/
 static int configure(int type, int c) {
-	if (type == SENSORS_ACTIVE) {
-		if (c) {
-			// set active
-			set_configuration(1, false); // every 1 second, 12bit precision
-		} else {
-			// set inactive
-		}
-		return 1;
+	switch (type) {
+		case SENSORS_ACTIVE:
+			if (c) {
+				// set active
+				set_configuration(1, false); // every 1 second, 12bit precision
+			} else {
+				// set inactive
+			}
+			return 1;
 	}
 	return 0;
 }
 
+
 /*---------------------------------------------------------------------------*/
 SENSORS_SENSOR(tmp102_sensor, "Temperature", value, configure, status); // register the functions
+

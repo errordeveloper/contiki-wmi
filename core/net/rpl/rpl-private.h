@@ -79,19 +79,20 @@
 #define RPL_CODE_SEC_DAO               0x82   /* Secure DAO */
 #define RPL_CODE_SEC_DAO_ACK           0x83   /* Secure DAO ACK */
 
-/* RPL DIO/DAO suboption types */
-#define RPL_DIO_SUBOPT_PAD1              	0
-#define RPL_DIO_SUBOPT_PADN              	1
-#define RPL_DIO_SUBOPT_DAG_METRIC_CONTAINER	2
-#define RPL_DIO_SUBOPT_ROUTE_INFO        	3
-#define RPL_DIO_SUBOPT_DAG_CONF          	4
-#define RPL_DIO_SUBOPT_TARGET            	5
-#define RPL_DIO_SUBOPT_TRANSIT           	6
-#define RPL_DIO_SUBOPT_SOLICITED_INFO    	7
-#define RPL_DIO_SUBOPT_PREFIX_INFO       	8
+/* RPL control message options. */
+#define RPL_OPTION_PAD1              	0
+#define RPL_OPTION_PADN              	1
+#define RPL_OPTION_DAG_METRIC_CONTAINER	2
+#define RPL_OPTION_ROUTE_INFO        	3
+#define RPL_OPTION_DAG_CONF          	4
+#define RPL_OPTION_TARGET            	5
+#define RPL_OPTION_TRANSIT           	6
+#define RPL_OPTION_SOLICITED_INFO    	7
+#define RPL_OPTION_PREFIX_INFO       	8
+#define RPL_OPTION_TARGET_DESC          9
 
 #define RPL_DAO_K_FLAG                   0x80 /* DAO ACK requested */
-#define RPL_DAO_D_FLAG                   0x40 /* DODAG ID Present */
+#define RPL_DAO_D_FLAG                   0x40 /* DODAG ID present */
 /*---------------------------------------------------------------------------*/
 /* Default values for RPL constants and variables. */
 
@@ -101,14 +102,14 @@
 /* Special value indicating immediate removal. */
 #define ZERO_LIFETIME                   0
 
-/* Special value indicating that a DAO should not expire. */
-#define INFINITE_LIFETIME               0xffffffff
+/* Default route lifetime unit. */
+#define RPL_DEFAULT_LIFETIME_UNIT       0xffff
 
-/* Default route lifetime in seconds. */
-#define DEFAULT_ROUTE_LIFETIME          INFINITE_LIFETIME
+/* Default route lifetime as a multiple of the lifetime unit. */
+#define RPL_DEFAULT_LIFETIME        0xff
 
-#define DEFAULT_RPL_LIFETIME_UNIT       0xffff
-#define DEFAULT_RPL_DEF_LIFETIME        0xff
+#define RPL_LIFETIME(dag, lifetime) \
+          ((unsigned long)(dag)->lifetime_unit * lifetime)
 
 #ifndef RPL_CONF_MIN_HOPRANKINC
 #define DEFAULT_MIN_HOPRANKINC          256
@@ -170,7 +171,12 @@
 #define RPL_MOP_NON_STORING             1
 #define RPL_MOP_STORING_NO_MULTICAST    2
 #define RPL_MOP_STORING_MULTICAST       3
+
+#ifdef  RPL_CONF_MOP
+#define RPL_MOP_DEFAULT                 RPL_CONF_MOP
+#else
 #define RPL_MOP_DEFAULT                 RPL_MOP_STORING_NO_MULTICAST
+#endif
 
 /*
  * The ETX in the metric container is expressed as a fixed-point value 
@@ -202,7 +208,7 @@ struct rpl_dio {
   uint8_t dag_intdoubl;
   uint8_t dag_intmin;
   uint8_t dag_redund;
-  uint8_t default_lifetime;
+  rpl_lifetime_t default_lifetime;
   uint16_t lifetime_unit;
   rpl_rank_t dag_max_rankinc;
   rpl_rank_t dag_min_hoprankinc;
@@ -238,7 +244,7 @@ extern rpl_stats_t rpl_stats;
 /* ICMPv6 functions for RPL. */
 void dis_output(uip_ipaddr_t *addr);
 void dio_output(rpl_dag_t *, uip_ipaddr_t *uc_addr);
-void dao_output(rpl_parent_t *, uint32_t lifetime);
+void dao_output(rpl_parent_t *, rpl_lifetime_t lifetime);
 void dao_ack_output(rpl_dag_t *, uip_ipaddr_t *, uint8_t);
 void uip_rpl_input(void);
 

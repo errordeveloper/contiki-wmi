@@ -46,8 +46,12 @@
 #define DEBUG DEBUG_PRINT
 #include "net/uip-debug.h"
 
+#ifndef PERIOD
+#define PERIOD 60
+#endif
+
 #define START_INTERVAL		(15 * CLOCK_SECOND)
-#define SEND_INTERVAL		(60 * CLOCK_SECOND)
+#define SEND_INTERVAL		(PERIOD * CLOCK_SECOND)
 #define SEND_TIME		(random_rand() % (SEND_INTERVAL))
 #define MAX_PAYLOAD_LEN		30
 
@@ -78,7 +82,7 @@ send_packet(void *ptr)
 
   seq_id++;
   PRINTF("DATA send to %d 'Hello %d'\n",
-         client_conn->ripaddr.u8[15], seq_id);
+         server_ipaddr.u8[sizeof(server_ipaddr.u8) - 1], seq_id);
   sprintf(buf, "Hello %d from the client", seq_id);
   uip_udp_packet_sendto(client_conn, buf, strlen(buf),
                         &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));

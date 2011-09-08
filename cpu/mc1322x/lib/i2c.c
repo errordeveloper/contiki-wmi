@@ -32,6 +32,8 @@
 
 #include "i2c.h"
 
+#include <stdio.h>
+
 static int8_t tx_byte_ctr;
 static int8_t rx_byte_ctr;
 
@@ -41,11 +43,11 @@ static uint8_t* rx_buf_ptr;
 
 volatile unsigned int i;	// volatile to prevent optimization
 
-static inline void i2c_send_byte() {
+static inline void i2c_send_byte(void) {
 	*I2CDR = *(tx_buf_ptr++); // set new byte, MCF is automatically cleared
 	tx_byte_ctr--;
 }
-static inline void i2c_recv_byte() {
+static inline void i2c_recv_byte(void) {
 	*(rx_buf_ptr++) = *I2CDR;
 	rx_byte_ctr--;
 }
@@ -211,10 +213,11 @@ void    i2c_transmit() {
 /*----------------------------------------------------------------------------*/
 /* force SCL to become bus master when sda is still low (can occur after sys reset */
 /*----------------------------------------------------------------------------*/
-void i2c_force_reset() {
+void i2c_force_reset(void) {
+	uint8_t tmp;
 	*I2CCR = 0x20;
 	*I2CCR = 0xA0;
-	uint8_t tmp = *I2CDR;
+	tmp = *I2CDR;
 	// return to module state Master?
 }
 
@@ -283,6 +286,7 @@ void i2c_disable(void) {
 /*----------------------------------------------------------------------------*/
 #ifdef I2C_NON_BLOCKING
 void i2c_isr (void) {
+	uint8_t dummy;
 	if (*I2CSR & I2C_MIF) { // interrupt is from i2c
 		if (*I2CSR & I2C_MCF) { // one byte transferred/received. will be cleared automatically when I2CDR is written or I2CSR read
 			if (tx_buf_ptr != 0) { // we're sending
@@ -302,7 +306,7 @@ void i2c_isr (void) {
 				}
 				if (*I2CCR & I2C_MTX) { // address byte was just sent
 					*I2CCR &= ~I2C_MTX; // switch to receive mode
-					uint8_t dummy = *I2CDR; // dummy read to throw away the address from register
+					dummy = *I2CDR; // dummy read to throw away the address from register
 					
 				} else if (rx_byte_ctr > 0) {
 					i2c_recv_byte(); // read new byte

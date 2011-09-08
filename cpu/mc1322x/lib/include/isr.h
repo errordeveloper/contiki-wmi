@@ -28,7 +28,7 @@
  * SUCH DAMAGE.
  *
  * This file is part of libmc1322x: see http://mc1322x.devl.org
- * for details. 
+ * for details.
  *
  *
  */
@@ -171,10 +171,10 @@ extern void uart2_isr_fallback(void); // __attribute__((weak));
 
 extern void maca_isr(void) __attribute__((weak));
 
-extern void i2c_isr(void) __attribute__((weak));
 extern void spi_isr(void) __attribute__((weak));
 
 extern void asm_isr(void) __attribute__((weak));
 
+extern void i2c_isr(void) __attribute__((weak));
 
 #endif

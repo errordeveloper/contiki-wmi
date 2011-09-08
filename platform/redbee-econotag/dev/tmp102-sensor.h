@@ -23,13 +23,13 @@ extern const struct sensors_sensor tmp102_sensor;
 //#define TMP102_ADDR				0x4B // if A0 @ SCL
 
 #define TMP102_REGISTER_TEMPERATURE		0x00
-#define TMP102_REGISTER_CONFIGURATION		0x01
+#define TMP102_REGISTER_CONFIGURATION	0x01
 #define TMP102_REGISTERO_T_LOW			0x02
 #define TMP102_REGISTERO_T_HIGH			0x03
 
 
 #define TMP102_CONF_EXTENDED_MODE 		0x10
-#define TMP102_CONF_ALERT			0x20
+#define TMP102_CONF_ALERT				0x20
 #define TMP102_CONF_CONVERSION_RATE		0xC0 // 2 bits indicating conversion rate (0.25, 1, 4, 8 Hz)
 
 #define TMP102_CONF_SHUTDOWN_MODE		0x01

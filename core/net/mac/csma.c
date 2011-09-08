@@ -241,6 +241,11 @@ packet_sent(void *ptr, int status, int num_transmissions)
       PRINTF("csma: retransmitting with time %lu %p\n", time, q);
       ctimer_set(&transmit_timer, time,
                  transmit_queued_packet, NULL);
+
+      /* This is needed to correctly attribute energy that we spent
+         transmitting this packet. */
+      queuebuf_update_attr_from_packetbuf(q->buf);
+
     } else {
       PRINTF("csma: drop with status %d after %d transmissions, %d collisions\n",
              status, q->transmissions, q->collisions);

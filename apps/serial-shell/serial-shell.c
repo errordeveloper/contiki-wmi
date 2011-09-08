@@ -67,7 +67,14 @@ shell_default_output(const char *text1, int len1, const char *text2, int len2)
     text2 = "";
     len2 = 0;
   }
+
+  /* Workaround for absence of "%.*s" format in avr-libc */
+#if defined (__AVR__)
+  printf("%s %s\r\n", text1, text2);
+#else
   printf("%.*s%.*s\r\n", len1, text1, len2, text2);
+#endif
+
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -75,6 +82,11 @@ shell_prompt(char *str)
 {
   printf("%d.%d: %s\r\n", rimeaddr_node_addr.u8[0], rimeaddr_node_addr.u8[1],
 	 str);
+}
+/*---------------------------------------------------------------------------*/
+void
+shell_exit(void)
+{
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(serial_shell_process, ev, data)

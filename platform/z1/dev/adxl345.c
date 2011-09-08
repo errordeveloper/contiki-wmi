@@ -40,7 +40,6 @@
 
 
 #include <stdio.h>
-#include <signal.h>
 #include "contiki.h"
 #include "adxl345.h"
 #include "cc2420.h"
@@ -371,9 +370,16 @@ PROCESS_THREAD(accmeter_process, ev, data) {
 /* XXX This interrupt vector is shared with the interrupts from CC2420, so that
   was moved here but should find a better home. XXX */
 
+#if 1
 static struct timer suppressTimer1, suppressTimer2;
 
-interrupt(PORT1_VECTOR) port1_isr (void) {
+#ifdef __IAR_SYSTEMS_ICC__
+#pragma vector=PORT1_VECTOR
+__interrupt void
+#else
+interrupt (PORT1_VECTOR)
+#endif
+port1_isr (void) {
   ENERGEST_ON(ENERGEST_TYPE_IRQ);
   /* ADXL345_IFG.x goes high when interrupt occurs, use to check what interrupted */
   if ((ADXL345_IFG & ADXL345_INT1_PIN) && !(ADXL345_IFG & BV(CC2420_FIFOP_PIN))){
@@ -403,4 +409,4 @@ interrupt(PORT1_VECTOR) port1_isr (void) {
 
 /*---------------------------------------------------------------------------*/
 
-
+#endif

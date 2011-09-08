@@ -67,12 +67,12 @@
 #define CLIF
 
 /* Baud rate */
-#define MOD 9999
+#define BRMOD 9999
 /*  230400 bps, INC=767, MOD=9999, 24Mhz 16x samp */
 /*  115200 bps, INC=767, MOD=9999, 24Mhz 8x samp */
-#define INC 767  
+#define BRINC 767  
 /*  921600 bps, MOD=9999, 24Mhz 16x samp */
-//#define INC 3071 
+//#define BRINC 3071 
 #define SAMP UCON_SAMP_8X
 //#define SAMP UCON_SAMP_16X
 
@@ -85,11 +85,25 @@
 #define USE_32KHZ_XTAL              0
 
 #define BLOCKING_TX 1
+#define MACA_AUTOACK 1
 #define NULLRDC_CONF_802154_AUTOACK_HW 1
+
+#define USE_WDT 0
+
+#ifndef WDT_TIMEOUT
+#define WDT_TIMEOUT 5000 /* watchdog timeout in ms */
+#endif
 
 /* end of mc1322x specific config. */
 
 /* start of conitki config. */
+#define PLATFORM_HAS_LEDS 1
+#define PLATFORM_HAS_BUTTON 1
+
+/* Core rtimer.h defaults to 16 bit timer unless RTIMER_CLOCK_LT is defined */
+typedef unsigned long rtimer_clock_t;
+#define RTIMER_CLOCK_LT(a,b)     ((signed long)((a)-(b)) < 0)
+
 #define RIMEADDR_CONF_SIZE              8
 
 /* EUI64 generation */
@@ -111,7 +125,7 @@
 #define NETSTACK_CONF_RADIO   contiki_maca_driver
 #define NETSTACK_CONF_FRAMER  framer_802154
 
-#define MAC_CONF_CHANNEL_CHECK_RATE      8
+#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE      8
 #define RIME_CONF_NO_POLITE_ANNOUCEMENTS 0
 #define CXMAC_CONF_ANNOUNCEMENTS         0
 #define XMAC_CONF_ANNOUNCEMENTS          0
@@ -125,7 +139,7 @@
 #define NETSTACK_CONF_RADIO   contiki_maca_driver
 #define NETSTACK_CONF_FRAMER  framer_802154
 
-#define MAC_CONF_CHANNEL_CHECK_RATE      8
+#define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE      8
 
 #define COLLECT_CONF_ANNOUNCEMENTS       1
 #define RIME_CONF_NO_POLITE_ANNOUCEMENTS 0
