@@ -62,8 +62,7 @@ value(int type)
 static int
 configure(int type, int c)
 {
-	switch (type) {
-	case SENSORS_ACTIVE:
+	if (type == SENSORS_ACTIVE) {
 		if (c) {
 			if(!status(SENSORS_ACTIVE)) {
 				timer_set(&debouncetimer, 0);
@@ -80,9 +79,7 @@ configure(int type, int c)
 static int
 status(int type)
 {
-	switch (type) {
-	case SENSORS_ACTIVE:
-	case SENSORS_READY:
+	if (type == SENSORS_ACTIVE || type == SENSORS_READY) {
 		return bit_is_set(*CRM_WU_CNTL, 20); /* check if kbi4 irq is enabled */
 	}
 	return 0;

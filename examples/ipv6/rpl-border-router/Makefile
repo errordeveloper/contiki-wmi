@@ -1,5 +1,5 @@
 CONTIKI_PROJECT=border-router
-all: $(CONTIKI_PROJECT) 
+all: $(CONTIKI_PROJECT)
 
 CONTIKI=../../..
 
@@ -32,6 +32,12 @@ CFLAGS += -DWEBSERVER=2
 endif
 
 include $(CONTIKI)/Makefile.include
+
+# This is necessary on some systems
+# and it will not break on other.
+P = env PATH="/sbin:/usr/sbin/:/usr/local/sbin/:$(PATH)"
+
+XTERM ?= urxvt # $(TERM) is not always the same as command
 
 $(CONTIKI)/tools/tunslip6:	$(CONTIKI)/tools/tunslip6.c
 	(cd $(CONTIKI)/tools && $(MAKE) tunslip6)
